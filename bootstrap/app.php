@@ -15,11 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'sanitize' => \App\Http\Middleware\SanitizeInput::class,
+            'log.api' => \App\Http\Middleware\LogApiRequests::class,
         ]);
         
-        // Apply sanitize middleware globally to API routes
+        // Apply middleware globally to API routes
         $middleware->api(append: [
             \App\Http\Middleware\SanitizeInput::class,
+            \App\Http\Middleware\LogApiRequests::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

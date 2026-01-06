@@ -24,9 +24,9 @@ class StoreItemRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
-            'description' => 'nullable|string',
-            'stock' => 'required|integer|min:0',
-            'condition' => 'required|in:baik,rusak ringan,rusak berat',
+            'description' => 'nullable|string|max:1000',
+            'stock' => 'required|integer|min:0|max:999999',
+            'condition' => 'required|in:baik,rusak',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }

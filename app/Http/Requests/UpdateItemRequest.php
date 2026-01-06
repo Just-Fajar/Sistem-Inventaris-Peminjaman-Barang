@@ -24,11 +24,43 @@ class UpdateItemRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255',
             'category_id' => 'sometimes|required|exists:categories,id',
-            'description' => 'nullable|string',
-            'stock' => 'sometimes|required|integer|min:0',
-            'condition' => 'sometimes|required|in:baik,rusak ringan,rusak berat',
+            'description' => 'nullable|string|max:1000',
+            'stock' => 'sometimes|required|integer|min:0|max:999999',
+            'condition' => 'sometimes|required|in:baik,rusak',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
+    }
+
+    /**
+     * Handle after validation
+     */
+    protected function prepareForValidation(): void
+    {
+        // Ensure that stock changes are validated properly
+        if ($this->has('stock')) {
+            $currentItem = $this->route('item');
+            if ($currentItem) {
+                $difference = $this->input('stock') - $currentItem->stock;
+                $newAvailableStock = $currentItem->available_stock + $difference;
+                
+                // Validate that new available stock won't be negative
+                $this->merge([
+                    '_calculated_available_stock' => $newAvailableStock,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->has('_calculated_available_stock') && $this->_calculated_available_stock < 0) {
+                $validator->errors()->add('stock', 'Stock tidak dapat dikurangi karena akan membuat available stock menjadi negatif. Ada ' . abs($this->_calculated_available_stock) . ' item yang sedang dipinjam.');
+            }
+        });
     }
 
     /**
