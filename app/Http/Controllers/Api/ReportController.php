@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Borrowing;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\BorrowingsExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -167,5 +170,64 @@ class ReportController extends Controller
             'daily_breakdown' => $dailyBreakdown,
             'borrowings' => $borrowings,
         ]);
+    }
+
+    /**
+     * Export borrowings report to PDF
+     */
+    public function exportBorrowingsPdf(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'nullable|in:dipinjam,dikembalikan,terlambat',
+        ]);
+
+        $query = Borrowing::with(['user', 'item.category', 'approver']);
+
+        if ($request->has('start_date')) {
+            $query->whereDate('borrow_date', '>=', $request->start_date);
+        }
+        if ($request->has('end_date')) {
+            $query->whereDate('borrow_date', '<=', $request->end_date);
+        }
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $borrowings = $query->orderBy('borrow_date', 'desc')->get();
+
+        $statistics = [
+            'total' => $borrowings->count(),
+            'active' => $borrowings->where('status', 'dipinjam')->count(),
+            'returned' => $borrowings->where('status', 'dikembalikan')->count(),
+            'overdue' => $borrowings->where('status', 'terlambat')->count(),
+        ];
+
+        $pdf = Pdf::loadView('reports.borrowings-pdf', [
+            'borrowings' => $borrowings,
+            'statistics' => $statistics,
+            'filters' => $request->only(['start_date', 'end_date', 'status']),
+            'generated_at' => now()->format('d/m/Y H:i'),
+        ]);
+
+        return $pdf->download('laporan-peminjaman-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Export borrowings report to Excel
+     */
+    public function exportBorrowingsExcel(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'nullable|in:dipinjam,dikembalikan,terlambat',
+        ]);
+
+        return Excel::download(
+            new BorrowingsExport($request->all()),
+            'laporan-peminjaman-' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 }

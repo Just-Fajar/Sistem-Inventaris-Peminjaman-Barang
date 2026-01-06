@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('borrowings', BorrowingController::class);
     Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
     Route::post('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
+    Route::post('/borrowings/{borrowing}/extend', [BorrowingController::class, 'extend']);
+    Route::get('/borrowings/my/list', [BorrowingController::class, 'myBorrowings']);
 
     // Reports
     Route::prefix('reports')->group(function () {
@@ -51,12 +55,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/items', [ReportController::class, 'items']);
         Route::get('/overdue', [ReportController::class, 'overdue']);
         Route::get('/monthly', [ReportController::class, 'monthly']);
+        Route::get('/export/borrowings/pdf', [ReportController::class, 'exportBorrowingsPdf']);
+        Route::get('/export/borrowings/excel', [ReportController::class, 'exportBorrowingsExcel']);
     });
 
     // Profile
     Route::prefix('profile')->group(function () {
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'updatePassword']);
+    });
+
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Activity Logs (Admin only)
+    Route::prefix('activity-logs')->middleware('admin')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index']);
+        Route::get('/recent', [ActivityLogController::class, 'recent']);
+        Route::get('/{type}/{id}', [ActivityLogController::class, 'getForModel']);
     });
 
     // Users (Admin only)

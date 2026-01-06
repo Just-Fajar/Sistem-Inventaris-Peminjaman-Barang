@@ -16,8 +16,28 @@ class BorrowingController extends Controller
     {
         $query = Borrowing::with(['user', 'item', 'approver']);
 
-        // Filter by status
-        if ($request->has('status')) {
+        // Search by code, user name, or item name
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('item', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter by multiple statuses
+        if ($request->has('statuses') && is_array($request->statuses)) {
+            $query->whereIn('status', $request->statuses);
+        }
+        // Single status filter (backward compatibility)
+        elseif ($request->has('status')) {
             $query->where('status', $request->status);
         }
 
@@ -26,9 +46,36 @@ class BorrowingController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        // Filter by date range
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $query->whereBetween('borrow_date', [$request->start_date, $request->end_date]);
+        // Filter by item
+        if ($request->has('item_id')) {
+            $query->where('item_id', $request->item_id);
+        }
+
+        // Filter by borrow date range
+        if ($request->has('borrow_start') && $request->has('borrow_end')) {
+            $query->whereBetween('borrow_date', [$request->borrow_start, $request->borrow_end]);
+        }
+
+        // Filter by due date range
+        if ($request->has('due_start') && $request->has('due_end')) {
+            $query->whereBetween('due_date', [$request->due_start, $request->due_end]);
+        }
+
+        // Filter overdue only
+        if ($request->has('overdue') && $request->overdue === 'true') {
+            $query->where('status', 'dipinjam')
+                  ->where('due_date', '<', now());
+        }
+
+        // Sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        
+        $allowedSorts = ['borrow_date', 'due_date', 'return_date', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->latest();
         }
 
         // Update overdue status
@@ -36,7 +83,7 @@ class BorrowingController extends Controller
             $borrowing->updateOverdueStatus();
         });
 
-        $borrowings = $query->latest()->paginate($request->per_page ?? 15);
+        $borrowings = $query->paginate($request->per_page ?? 15);
 
         return response()->json($borrowings);
     }
@@ -188,4 +235,47 @@ class BorrowingController extends Controller
             'message' => 'Borrowing deleted successfully',
         ]);
     }
+
+    /**
+     * Extend borrowing due date
+     */
+    public function extend(Request $request, Borrowing $borrowing)
+    {
+        $validated = $request->validate([
+            'new_due_date' => 'required|date|after:due_date',
+        ]);
+
+        if ($borrowing->status !== 'dipinjam') {
+            return response()->json([
+                'message' => 'Only active borrowings can be extended',
+            ], 422);
+        }
+
+        $borrowing->update(['due_date' => $validated['new_due_date']]);
+        $borrowing->load(['user', 'item', 'approver']);
+
+        return response()->json([
+            'message' => 'Borrowing extended successfully',
+            'data' => $borrowing,
+        ]);
+    }
+
+    /**
+     * Get current user's borrowings
+     */
+    public function myBorrowings(Request $request)
+    {
+        $query = Borrowing::with(['item.category'])
+            ->where('user_id', $request->user()->id);
+
+        // Filter by status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $borrowings = $query->latest()->paginate($request->per_page ?? 15);
+
+        return response()->json($borrowings);
+    }
 }
+

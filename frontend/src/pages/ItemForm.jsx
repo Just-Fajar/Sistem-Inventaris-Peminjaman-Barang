@@ -12,6 +12,7 @@ function ItemForm() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const {
     register,
@@ -58,23 +59,55 @@ function ItemForm() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validation
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Ukuran file maksimal 2MB');
-        e.target.value = '';
-        return;
-      }
-      if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-        alert('Format file harus JPG, JPEG, atau PNG');
-        e.target.value = '';
-        return;
-      }
+      validateAndPreviewImage(file, e.target);
+    }
+  };
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const validateAndPreviewImage = (file, inputElement = null) => {
+    // Validation
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran file maksimal 2MB');
+      if (inputElement) inputElement.value = '';
+      return false;
+    }
+    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+      alert('Format file harus JPG, JPEG, atau PNG');
+      if (inputElement) inputElement.value = '';
+      return false;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    return true;
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (validateAndPreviewImage(file)) {
+        // Set the file to the input element
+        const input = document.querySelector('input[type="file"]');
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        input.files = dataTransfer.files;
+      }
     }
   };
 
@@ -223,23 +256,83 @@ function ItemForm() {
             </label>
             <div className="flex items-start space-x-4">
               <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png"
-                  onChange={handleImageChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Format: JPG, JPEG, PNG. Maksimal 2MB
-                </p>
+                <div
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
+                    dragActive
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-300 bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="file"
+                    id="image-upload"
+                    accept="image/jpeg,image/jpg,image/png"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="text-center">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      stroke="currentColor"
+                      fill="none"
+                      viewBox="0 0 48 48"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <div className="mt-2">
+                      <label
+                        htmlFor="image-upload"
+                        className="cursor-pointer text-blue-600 hover:text-blue-500 font-medium"
+                      >
+                        Upload file
+                      </label>
+                      <span className="text-gray-600"> atau drag and drop</span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      JPG, JPEG, PNG hingga 2MB
+                    </p>
+                  </div>
+                </div>
               </div>
               {imagePreview && (
                 <div className="shrink-0">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-20 w-20 object-cover rounded-lg border border-gray-300"
-                  />
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-32 w-32 object-cover rounded-lg border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null);
+                        document.getElementById('image-upload').value = '';
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
