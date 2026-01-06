@@ -19,14 +19,14 @@ use App\Http\Controllers\ActivityLogController;
 |--------------------------------------------------------------------------
 */
 
-// Public routes
-Route::prefix('auth')->group(function () {
+// Public routes with rate limiting
+Route::middleware(['throttle:10,1'])->prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+// Protected routes with rate limiting
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Auth
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
