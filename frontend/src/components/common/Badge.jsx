@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import { memo } from 'react';
 
-function Badge({ children, variant = 'default', size = 'md', className = '' }) {
+const Badge = memo(function Badge({ children, variant = 'default', size = 'md', className = '', ...props }) {
   const baseStyles = 'inline-flex items-center font-medium rounded-full';
   
   const variants = {
@@ -23,7 +24,7 @@ function Badge({ children, variant = 'default', size = 'md', className = '' }) {
       {children}
     </span>
   );
-}
+});
 
 Badge.propTypes = {
   children: PropTypes.node.isRequired,

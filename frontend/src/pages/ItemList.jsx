@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { categoryService } from '../services/categoryService';
 import { itemService } from '../services/itemService';
@@ -13,22 +13,18 @@ function ItemList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadCategories();
-    loadItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, search, categoryFilter, conditionFilter]);
-
-  const loadCategories = async () => {
+  // Memoize loadCategories untuk menghindari re-creation
+  const loadCategories = useCallback(async () => {
     try {
       const response = await categoryService.getAll({ all: true });
       setCategories(response.data || response);
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
-  };
+  }, []);
 
-  const loadItems = async () => {
+  // Memoize loadItems untuk menghindari re-creation
+  const loadItems = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
@@ -45,9 +41,17 @@ function ItemList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, search, categoryFilter, conditionFilter]);
 
-  const handleDelete = async (id) => {
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  const handleDelete = useCallback(async (id) => {
     if (!window.confirm('Yakin ingin menghapus barang ini?')) return;
 
     try {
@@ -56,16 +60,17 @@ function ItemList() {
     } catch (error) {
       alert(error.response?.data?.message || 'Gagal menghapus barang');
     }
-  };
+  }, [loadItems]);
 
-  const getConditionBadge = (condition) => {
+  // Memoize condition badge calculator
+  const getConditionBadge = useMemo(() => {
     const styles = {
       baik: 'bg-green-100 text-green-800',
       rusak: 'bg-red-100 text-red-800',
       hilang: 'bg-gray-100 text-gray-800',
     };
-    return styles[condition] || styles.baik;
-  };
+    return (condition) => styles[condition] || styles.baik;
+  }, []);
 
   return (
     <div>

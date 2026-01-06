@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
+import { memo } from 'react';
 
-function Card({ children, title, subtitle, className = '', padding = true, ...props }) {
+const Card = memo(function Card({ children, title, subtitle, className = '', padding = true, ...props }) {
   return (
     <div className={`bg-white rounded-lg shadow-md ${className}`} {...props}>
       {(title || subtitle) && (
@@ -14,7 +15,7 @@ function Card({ children, title, subtitle, className = '', padding = true, ...pr
       </div>
     </div>
   );
-}
+});
 
 Card.propTypes = {
   children: PropTypes.node.isRequired,
