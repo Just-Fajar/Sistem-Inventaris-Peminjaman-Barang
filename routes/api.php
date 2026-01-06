@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\BorrowingController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,5 +51,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/items', [ReportController::class, 'items']);
         Route::get('/overdue', [ReportController::class, 'overdue']);
         Route::get('/monthly', [ReportController::class, 'monthly']);
+    });
+
+    // Profile
+    Route::prefix('profile')->group(function () {
+        Route::put('/', [ProfileController::class, 'update']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
+    });
+
+    // Users (Admin only)
+    Route::middleware('admin')->group(function () {
+        Route::apiResource('users', UserController::class);
     });
 });
