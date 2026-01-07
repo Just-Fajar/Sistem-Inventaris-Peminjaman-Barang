@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Loading from './components/common/Loading';
+import ErrorBoundary from './components/ErrorBoundary';
+import OfflineBanner from './components/common/OfflineBanner';
 import { authService } from './services/authService';
 
 // Eager load Layout and Login (critical paths)
@@ -41,9 +43,11 @@ function SuspenseWrapper({ children }) {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <OfflineBanner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
         
         {/* Protected Routes with Layout */}
         <Route
@@ -85,6 +89,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 
