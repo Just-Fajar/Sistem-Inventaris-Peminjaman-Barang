@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Loading from './components/common/Loading';
-import ErrorBoundary from './components/ErrorBoundary';
 import OfflineBanner from './components/common/OfflineBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 import { authService } from './services/authService';
 
 // Eager load Layout and Login (critical paths)

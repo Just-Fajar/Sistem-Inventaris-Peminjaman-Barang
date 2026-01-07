@@ -1,4 +1,4 @@
-import { onCLS, onFID, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
+import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB } from 'web-vitals';
 
 /**
  * Report Web Vitals to analytics
