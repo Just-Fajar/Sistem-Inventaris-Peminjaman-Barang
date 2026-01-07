@@ -1,4 +1,4 @@
-import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
 /**
  * Report Web Vitals to analytics
@@ -49,8 +49,7 @@ function sendToAnalytics({ name, value, id, rating }) {
 export function initWebVitals() {
   // Core Web Vitals
   onCLS(sendToAnalytics); // Layout stability
-  onINP(sendToAnalytics); // Responsiveness (replaces FID in Chrome)
-  onFID(sendToAnalytics); // Legacy responsiveness metric
+  onINP(sendToAnalytics); // Responsiveness (replaces FID in web-vitals v4)
   onLCP(sendToAnalytics); // Loading performance
   
   // Other important metrics
