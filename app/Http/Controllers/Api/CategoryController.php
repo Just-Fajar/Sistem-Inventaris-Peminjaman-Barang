@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -13,15 +14,28 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Category::withCount('items');
-
+        // Cache categories untuk 1 jam (3600 detik)
+        $cacheKey = 'categories_' . ($request->has('all') ? 'all' : 'paginated_' . ($request->per_page ?? 15));
+        
         if ($request->has('search')) {
+            // Jangan cache hasil search
+            $query = Category::withCount('items');
             $query->where('name', 'like', "%{$request->search}%");
+            
+            $categories = $request->has('all') 
+                ? $query->get() 
+                : $query->paginate($request->per_page ?? 15);
+                
+            return response()->json($categories);
         }
-
-        $categories = $request->has('all') 
-            ? $query->get() 
-            : $query->paginate($request->per_page ?? 15);
+        
+        $categories = Cache::remember($cacheKey, 3600, function () use ($request) {
+            $query = Category::withCount('items');
+            
+            return $request->has('all') 
+                ? $query->get() 
+                : $query->paginate($request->per_page ?? 15);
+        });
 
         return response()->json($categories);
     }
@@ -37,6 +51,10 @@ class CategoryController extends Controller
         ]);
 
         $category = Category::create($validated);
+        
+        // Clear cache setelah create
+        Cache::forget('categories_all');
+        Cache::forget('categories_paginated_15');
 
         return response()->json([
             'message' => 'Category created successfully',
@@ -67,6 +85,10 @@ class CategoryController extends Controller
         ]);
 
         $category->update($validated);
+        
+        // Clear cache setelah update
+        Cache::forget('categories_all');
+        Cache::forget('categories_paginated_15');
 
         return response()->json([
             'message' => 'Category updated successfully',
@@ -84,6 +106,13 @@ class CategoryController extends Controller
             return response()->json([
                 'message' => 'Cannot delete category with items',
             ], 422);
+        }
+
+        $category->delete();
+        
+        // Clear cache setelah delete
+        Cache::forget('categories_all');
+        Cache::forget('categories_paginated_15');
         }
 
         $category->delete();

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 use Carbon\Carbon;
 
 class Borrowing extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -141,5 +143,16 @@ class Borrowing extends Model
     public function scopeReturned($query)
     {
         return $query->where('status', 'dikembalikan');
+    }
+
+    /**
+     * Activity log configuration
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'quantity', 'borrow_date', 'due_date', 'return_date', 'approved_by'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 }

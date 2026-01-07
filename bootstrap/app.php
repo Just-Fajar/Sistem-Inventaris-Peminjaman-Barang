@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'sanitize' => \App\Http\Middleware\SanitizeInput::class,
+        ]);
+        
+        // Apply sanitize middleware globally to API routes
+        $middleware->api(append: [
+            \App\Http\Middleware\SanitizeInput::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
