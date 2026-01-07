@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "analyze": "vite build --mode analyze",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
@@ -52,6 +53,7 @@
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
     "prettier": "^3.7.4",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "vite": "npm:rolldown-vite@7.2.5",

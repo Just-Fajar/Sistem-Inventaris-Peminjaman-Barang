@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Item;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
@@ -40,7 +41,12 @@ class ItemService
             $data['image'] = $this->handleImageUpload($data['image']);
         }
 
-        return Item::create($data);
+        $item = Item::create($data);
+        
+        // Clear cache when item is created
+        $this->clearItemsCache();
+        
+        return $item;
     }
 
     /**
@@ -64,6 +70,9 @@ class ItemService
         }
 
         $item->update($data);
+        
+        // Clear cache when item is updated
+        $this->clearItemsCache();
 
         return $item->fresh();
     }
@@ -82,7 +91,12 @@ class ItemService
             Storage::disk('public')->delete($item->image);
         }
 
-        return $item->delete();
+        $deleted = $item->delete();
+        
+        // Clear cache when item is deleted
+        $this->clearItemsCache();
+        
+        return $deleted;
     }
 
     /**
@@ -129,5 +143,42 @@ class ItemService
     public function increaseStock(Item $item, int $quantity): void
     {
         $item->increment('available_stock', $quantity);
+    }
+    
+    /**
+     * Clear items-related cache
+     */
+    private function clearItemsCache(): void
+    {
+        Cache::tags(['items'])->flush();
+    }
+    
+    /**
+     * Get items with caching
+     */
+    public function getCachedItems(array $filters = []): mixed
+    {
+        $cacheKey = 'items:' . md5(json_encode($filters));
+        
+        return Cache::tags(['items'])->remember($cacheKey, 3600, function () use ($filters) {
+            $query = Item::with('category');
+            
+            if (isset($filters['category_id'])) {
+                $query->where('category_id', $filters['category_id']);
+            }
+            
+            if (isset($filters['condition'])) {
+                $query->where('condition', $filters['condition']);
+            }
+            
+            if (isset($filters['search'])) {
+                $query->where(function ($q) use ($filters) {
+                    $q->where('name', 'like', '%' . $filters['search'] . '%')
+                      ->orWhere('code', 'like', '%' . $filters['search'] . '%');
+                });
+            }
+            
+            return $query->paginate($filters['per_page'] ?? 15);
+        });
     }
 }

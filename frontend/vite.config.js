@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -72,10 +73,33 @@ export default defineConfig({
       devOptions: {
         enabled: false // Enable in development if needed
       }
+    }),
+    // Bundle analyzer - only in analyze mode
+    visualizer({
+      filename: './dist/stats.html',
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
     })
   ],
   esbuild: {
     // Remove console.log in production
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
+  },
+  build: {
+    // Optimization settings
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['lucide-react'],
+        }
+      }
+    },
+    // Reduce chunk size warnings threshold
+    chunkSizeWarningLimit: 1000,
+    // Enable source maps for production debugging
+    sourcemap: false,
   }
 })
