@@ -113,9 +113,6 @@ class CategoryController extends Controller
         // Clear cache setelah delete
         Cache::forget('categories_all');
         Cache::forget('categories_paginated_15');
-        }
-
-        $category->delete();
 
         return response()->json([
             'message' => 'Category deleted successfully',
