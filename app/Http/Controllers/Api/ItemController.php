@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
+use App\Http\Requests\StoreItemRequest;
+use App\Http\Requests\UpdateItemRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -89,16 +91,9 @@ class ItemController extends Controller
     /**
      * Store a newly created item
      */
-    public function store(Request $request)
+    public function store(StoreItemRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'category_id' => 'required|exists:categories,id',
-            'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|max:2048',
-            'condition' => 'required|in:baik,rusak,hilang',
-        ]);
+        $validated = $request->validated();
 
         // Generate unique code
         $validated['code'] = Item::generateCode();
@@ -133,16 +128,9 @@ class ItemController extends Controller
     /**
      * Update the specified item
      */
-    public function update(Request $request, Item $item)
+    public function update(UpdateItemRequest $request, Item $item)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'category_id' => 'sometimes|exists:categories,id',
-            'stock' => 'sometimes|integer|min:0',
-            'image' => 'nullable|image|max:2048',
-            'condition' => 'sometimes|in:baik,rusak,hilang',
-        ]);
+        $validated = $request->validated();
 
         // Update available stock if total stock changes
         if (isset($validated['stock'])) {
@@ -189,6 +177,88 @@ class ItemController extends Controller
 
         return response()->json([
             'message' => 'Item deleted successfully',
+        ]);
+    }
+
+    /**
+     * Bulk delete items
+     */
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:items,id',
+        ]);
+
+        $items = Item::whereIn('id', $validated['ids'])->get();
+
+        // Check if any item has active borrowings
+        $itemsWithBorrowings = [];
+        foreach ($items as $item) {
+            if ($item->activeBorrowings()->count() > 0) {
+                $itemsWithBorrowings[] = $item->name;
+            }
+        }
+
+        if (!empty($itemsWithBorrowings)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Some items have active borrowings and cannot be deleted',
+                'items' => $itemsWithBorrowings,
+            ], 422);
+        }
+
+        // Delete images and items
+        foreach ($items as $item) {
+            if ($item->image) {
+                Storage::disk('public')->delete($item->image);
+            }
+            $item->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => count($items) . ' items deleted successfully',
+        ]);
+    }
+
+    /**
+     * Get search suggestions for autocomplete
+     */
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q', '');
+        $limit = $request->input('limit', 10);
+
+        if (strlen($query) < 2) {
+            return response()->json([
+                'data' => [],
+            ]);
+        }
+
+        $items = Item::where('name', 'like', "%{$query}%")
+            ->orWhere('code', 'like', "%{$query}%")
+            ->orWhereHas('category', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%");
+            })
+            ->with('category:id,name')
+            ->select('id', 'code', 'name', 'category_id', 'available_stock')
+            ->limit($limit)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'label' => $item->name . ' (' . $item->code . ')',
+                    'value' => $item->id,
+                    'code' => $item->code,
+                    'name' => $item->name,
+                    'category' => $item->category->name ?? null,
+                    'available_stock' => $item->available_stock,
+                ];
+            });
+
+        return response()->json([
+            'data' => $items,
         ]);
     }
 }

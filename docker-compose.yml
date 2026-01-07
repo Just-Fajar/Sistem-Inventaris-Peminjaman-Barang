@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # Backend (Laravel)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventaris-app
+    restart: unless-stopped
+    working_dir: /var/www
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/sites-available/default
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=db
+      - DB_DATABASE=inventaris
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=redis
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+    depends_on:
+      - db
+      - redis
+    networks:
+      - inventaris-network
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: inventaris-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - app
+    networks:
+      - inventaris-network
+
+  # Database (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: inventaris-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: inventaris
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: inventaris
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - inventaris-network
+
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: inventaris-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - inventaris-network
+
+  # PhpMyAdmin (optional - for development)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: inventaris-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: secret
+    depends_on:
+      - db
+    networks:
+      - inventaris-network
+
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  inventaris-network:
+    driver: bridge

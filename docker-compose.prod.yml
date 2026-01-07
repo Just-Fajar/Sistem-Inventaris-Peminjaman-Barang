@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Backend (Laravel) - Production
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventaris-app-prod
+    restart: always
+    working_dir: /var/www
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./storage:/var/www/storage
+      - ./bootstrap/cache:/var/www/bootstrap/cache
+      - ./docker/nginx/production.conf:/etc/nginx/sites-available/default
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+      - ./ssl:/etc/nginx/ssl
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=redis
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+    depends_on:
+      - db
+      - redis
+    networks:
+      - inventaris-network
+
+  # Database (MySQL) - Production
+  db:
+    image: mysql:8.0
+    container_name: inventaris-db-prod
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/production.cnf:/etc/mysql/conf.d/my.cnf
+      - ./backups:/backups
+    networks:
+      - inventaris-network
+
+  # Redis - Production
+  redis:
+    image: redis:alpine
+    container_name: inventaris-redis-prod
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - inventaris-network
+
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  inventaris-network:
+    driver: bridge

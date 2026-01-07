@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Jobs\SendBorrowingNotification;
+use App\Jobs\SendOverdueNotification;
 use App\Models\Borrowing;
 use App\Models\Item;
 use App\Notifications\BorrowingApprovedNotification;
@@ -72,8 +74,8 @@ class BorrowingService
             'approved_at' => now(),
         ]);
 
-        // Send notification to user
-        $borrowing->user->notify(new BorrowingApprovedNotification($borrowing->fresh()));
+        // Dispatch queue job for notification
+        SendBorrowingNotification::dispatch($borrowing->fresh(), 'approved');
 
         return $borrowing->fresh();
     }
@@ -154,6 +156,9 @@ class BorrowingService
 
         foreach ($overdueBorrowings as $borrowing) {
             $borrowing->update(['status' => 'terlambat']);
+            
+            // Dispatch overdue notification job
+            SendOverdueNotification::dispatch($borrowing);
         }
 
         return $overdueBorrowings->count();
