@@ -149,7 +149,9 @@ class ReportController extends Controller
         for ($day = 1; $day <= $endDate->day; $day++) {
             $date = Carbon::create($year, $month, $day);
             $dailyBorrowings = $borrowings->filter(function ($borrowing) use ($date) {
-                return $borrowing->borrow_date->isSameDay($date);
+                /** @var \Carbon\Carbon $borrowDate */
+                $borrowDate = $borrowing->borrow_date;
+                return $borrowDate->format('Y-m-d') === $date->format('Y-m-d');
             });
 
             $dailyBreakdown[] = [

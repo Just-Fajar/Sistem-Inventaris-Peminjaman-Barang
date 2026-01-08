@@ -54,8 +54,11 @@ class SendBorrowingNotification implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        
         logger()->error('Failed to send borrowing notification', [
-            'borrowing_id' => $this->borrowing->id,
+            'borrowing_id' => $borrowingWithId->id,
             'type' => $this->notificationType,
             'error' => $exception->getMessage(),
         ]);

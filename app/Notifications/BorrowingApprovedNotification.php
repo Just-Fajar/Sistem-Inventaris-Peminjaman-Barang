@@ -37,17 +37,24 @@ class BorrowingApprovedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        /** @var \Carbon\Carbon $borrowDate */
+        $borrowDate = $this->borrowing->borrow_date;
+        /** @var \Carbon\Carbon $dueDate */
+        $dueDate = $this->borrowing->due_date;
+        
         return (new MailMessage)
-            ->subject('Peminjaman Disetujui - ' . $this->borrowing->borrowing_code)
+            ->subject('Peminjaman Disetujui - ' . $this->borrowing->code)
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Peminjaman Anda telah disetujui!')
             ->line('**Detail Peminjaman:**')
-            ->line('Kode Peminjaman: ' . $this->borrowing->borrowing_code)
+            ->line('Kode Peminjaman: ' . $this->borrowing->code)
             ->line('Barang: ' . $this->borrowing->item->name)
             ->line('Jumlah: ' . $this->borrowing->quantity)
-            ->line('Tanggal Pinjam: ' . $this->borrowing->borrow_date->format('d/m/Y'))
-            ->line('Tanggal Jatuh Tempo: ' . $this->borrowing->due_date->format('d/m/Y'))
-            ->action('Lihat Detail', url('/borrowings/' . $this->borrowing->id))
+            ->line('Tanggal Pinjam: ' . $borrowDate->format('d/m/Y'))
+            ->line('Tanggal Jatuh Tempo: ' . $dueDate->format('d/m/Y'))
+            ->action('Lihat Detail', url('/borrowings/' . $borrowingWithId->id))
             ->line('Terima kasih telah menggunakan sistem kami!');
     }
 
@@ -58,13 +65,18 @@ class BorrowingApprovedNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        /** @var \Carbon\Carbon $dueDate */
+        $dueDate = $this->borrowing->due_date;
+        
         return [
             'type' => 'borrowing_approved',
-            'borrowing_id' => $this->borrowing->id,
-            'borrowing_code' => $this->borrowing->borrowing_code,
+            'borrowing_id' => $borrowingWithId->id,
+            'borrowing_code' => $this->borrowing->code,
             'item_name' => $this->borrowing->item->name,
             'quantity' => $this->borrowing->quantity,
-            'due_date' => $this->borrowing->due_date->format('Y-m-d'),
+            'due_date' => $dueDate->format('Y-m-d'),
             'message' => 'Peminjaman Anda untuk ' . $this->borrowing->item->name . ' telah disetujui.',
         ];
     }

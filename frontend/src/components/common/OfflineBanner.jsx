@@ -15,7 +15,7 @@ function OfflineBanner() {
     <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-3 shadow-lg">
       <div className="container mx-auto flex items-center justify-center gap-3">
         <svg
-          className="w-5 h-5 flex-shrink-0"
+          className="w-5 h-5 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

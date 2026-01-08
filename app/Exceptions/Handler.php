@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\AuthenticationException;
@@ -36,7 +37,7 @@ class Handler extends ExceptionHandler
                     'exception' => get_class($e),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
-                    'user_id' => auth()->id(),
+                    'user_id' => Auth::id() ?? null,
                     'url' => request()->fullUrl(),
                     'method' => request()->method(),
                     'ip' => request()->ip(),

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -50,9 +51,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        /** @var User&\stdClass $userWithId */
+        $userWithId = $user;
+        /** @var int $userId */
+        $userId = (int) $userWithId->id;
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
             'password' => ['nullable', 'string', new StrongPassword()],
             'role' => 'required|in:admin,staff',
         ]);
@@ -74,8 +80,13 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        /** @var User&\stdClass $userWithId */
+        $userWithId = $user;
+        /** @var int $userId */
+        $userId = (int) $userWithId->id;
+        
         // Prevent deleting yourself
-        if ($user->id === auth()->id()) {
+        if ($userId === Auth::id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Tidak dapat menghapus user sendiri'

@@ -76,11 +76,18 @@ class CategoryController extends Controller
 
     /**
      * Update the specified category
+     * 
+     * @param Category $category
      */
     public function update(Request $request, Category $category)
     {
+        /** @var Category&\stdClass $categoryWithId */
+        $categoryWithId = $category;
+        /** @var int $categoryId */
+        $categoryId = (int) $categoryWithId->id;
+        
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'sometimes|string|max:255|unique:categories,name,' . $categoryId,
             'description' => 'nullable|string',
         ]);
 

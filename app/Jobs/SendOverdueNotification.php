@@ -41,10 +41,15 @@ class SendOverdueNotification implements ShouldQueue
         // Implement your email sending logic here
         // Example: Mail::to($user->email)->send(new OverdueNotificationMail($this->borrowing, $daysOverdue));
         
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        /** @var \App\Models\User&\stdClass $userWithId */
+        $userWithId = $user;
+        
         // Log the overdue notification
         logger()->info('Overdue notification sent', [
-            'borrowing_id' => $this->borrowing->id,
-            'user_id' => $user->id,
+            'borrowing_id' => $borrowingWithId->id,
+            'user_id' => $userWithId->id,
             'days_overdue' => $daysOverdue,
         ]);
     }
@@ -54,8 +59,11 @@ class SendOverdueNotification implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        
         logger()->error('Failed to send overdue notification', [
-            'borrowing_id' => $this->borrowing->id,
+            'borrowing_id' => $borrowingWithId->id,
             'error' => $exception->getMessage(),
         ]);
     }
