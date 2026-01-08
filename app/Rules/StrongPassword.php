@@ -10,37 +10,40 @@ class StrongPassword implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string, ?string=): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  \Closure(string): void  $fail
+     * @return void
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         // Check minimum length
         if (strlen($value) < 8) {
-            $fail('password.min_length', 'Password harus minimal 8 karakter.');
+            $fail('The :attribute must be at least 8 characters.');
             return;
         }
 
         // Check for uppercase letter
         if (!preg_match('/[A-Z]/', $value)) {
-            $fail('password.uppercase', 'Password harus mengandung minimal 1 huruf besar.');
+            $fail('The :attribute must contain at least 1 uppercase letter.');
             return;
         }
 
         // Check for lowercase letter
         if (!preg_match('/[a-z]/', $value)) {
-            $fail('password.lowercase', 'Password harus mengandung minimal 1 huruf kecil.');
+            $fail('The :attribute must contain at least 1 lowercase letter.');
             return;
         }
 
         // Check for number
         if (!preg_match('/[0-9]/', $value)) {
-            $fail('password.number', 'Password harus mengandung minimal 1 angka.');
+            $fail('The :attribute must contain at least 1 number.');
             return;
         }
 
         // Check for special character
         if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $value)) {
-            $fail('password.special', 'Password harus mengandung minimal 1 karakter spesial (!@#$%^&*(),.?":{}|<>).');
+            $fail('The :attribute must contain at least 1 special character (!@#$%^&*(),.?":{}|<>).');
             return;
         }
     }

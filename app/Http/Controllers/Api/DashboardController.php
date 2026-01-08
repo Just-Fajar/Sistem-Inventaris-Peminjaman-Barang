@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\Borrowing;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -20,7 +21,7 @@ class DashboardController extends Controller
         // Total items
         $totalItems = Item::count();
         $availableItems = Item::where('available_stock', '>', 0)->count();
-        $borrowedItems = Item::where('available_stock', '<', \DB::raw('stock'))
+        $borrowedItems = Item::where('available_stock', '<', DB::raw('stock'))
                              ->where('stock', '>', 0)
                              ->count();
 

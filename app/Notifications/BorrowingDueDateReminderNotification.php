@@ -41,17 +41,22 @@ class BorrowingDueDateReminderNotification extends Notification implements Shoul
     {
         $urgency = $this->daysUntilDue <= 1 ? 'warning' : 'info';
         
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        /** @var \Carbon\Carbon $dueDate */
+        $dueDate = $this->borrowing->due_date;
+        
         return (new MailMessage)
             ->level($urgency)
-            ->subject('Pengingat Jatuh Tempo Peminjaman - ' . $this->borrowing->borrowing_code)
+            ->subject('Pengingat Jatuh Tempo Peminjaman - ' . $this->borrowing->code)
             ->greeting('Halo ' . $notifiable->name . ',')
             ->line('Peminjaman Anda akan jatuh tempo dalam **' . $this->daysUntilDue . ' hari**.')
             ->line('**Detail Peminjaman:**')
-            ->line('Kode Peminjaman: ' . $this->borrowing->borrowing_code)
+            ->line('Kode Peminjaman: ' . $this->borrowing->code)
             ->line('Barang: ' . $this->borrowing->item->name)
             ->line('Jumlah: ' . $this->borrowing->quantity)
-            ->line('Tanggal Jatuh Tempo: ' . $this->borrowing->due_date->format('d/m/Y'))
-            ->action('Lihat Detail', url('/borrowings/' . $this->borrowing->id))
+            ->line('Tanggal Jatuh Tempo: ' . $dueDate->format('d/m/Y'))
+            ->action('Lihat Detail', url('/borrowings/' . $borrowingWithId->id))
             ->line('Harap kembalikan barang tepat waktu untuk menghindari denda keterlambatan.');
     }
 
@@ -62,15 +67,20 @@ class BorrowingDueDateReminderNotification extends Notification implements Shoul
      */
     public function toArray(object $notifiable): array
     {
+        /** @var \App\Models\Borrowing&\stdClass $borrowingWithId */
+        $borrowingWithId = $this->borrowing;
+        /** @var \Carbon\Carbon $dueDate */
+        $dueDate = $this->borrowing->due_date;
+        
         return [
             'type' => 'borrowing_due_reminder',
-            'borrowing_id' => $this->borrowing->id,
-            'borrowing_code' => $this->borrowing->borrowing_code,
+            'borrowing_id' => $borrowingWithId->id,
+            'borrowing_code' => $this->borrowing->code,
             'item_name' => $this->borrowing->item->name,
             'quantity' => $this->borrowing->quantity,
-            'due_date' => $this->borrowing->due_date->format('Y-m-d'),
+            'due_date' => $dueDate->format('Y-m-d'),
             'days_until_due' => $this->daysUntilDue,
-            'message' => 'Peminjaman ' . $this->borrowing->borrowing_code . ' akan jatuh tempo dalam ' . $this->daysUntilDue . ' hari.',
+            'message' => 'Peminjaman ' . $this->borrowing->code . ' akan jatuh tempo dalam ' . $this->daysUntilDue . ' hari.',
         ];
     }
 }

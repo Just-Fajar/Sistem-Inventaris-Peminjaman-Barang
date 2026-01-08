@@ -36,9 +36,9 @@ class Borrowing extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'borrow_date' => 'date',
-        'due_date' => 'date',
-        'return_date' => 'date',
+        'borrow_date' => 'datetime',
+        'due_date' => 'datetime',
+        'return_date' => 'datetime',
         'quantity' => 'integer',
     ];
 

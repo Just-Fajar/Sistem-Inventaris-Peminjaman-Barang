@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -31,7 +32,7 @@ class LogApiRequests
                 'url' => $request->fullUrl(),
                 'path' => $request->path(),
                 'ip' => $request->ip(),
-                'user_id' => auth()->id() ?? null,
+                'user_id' => Auth::id() ?? null,
                 'user_agent' => $request->userAgent(),
                 'duration_ms' => round($duration * 1000, 2),
                 'status' => $response->getStatusCode(),

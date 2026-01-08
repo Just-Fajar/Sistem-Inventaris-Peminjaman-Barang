@@ -147,9 +147,14 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $userId = $request->user()->id;
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        /** @var int $userId */
+        $userId = (int) $user->id;
 
-        $request->user()->currentAccessToken()->delete();
+        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
+        $token = $user->currentAccessToken();
+        $token->delete();
 
         // Log logout
         SecurityAuditLog::logLogout($userId);

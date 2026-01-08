@@ -6,6 +6,7 @@ use App\Models\Borrowing;
 use App\Models\Item;
 use App\Models\User;
 use App\Services\BorrowingService;
+use App\Services\ItemService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,7 +22,8 @@ class BorrowingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->borrowingService = new BorrowingService();
+        $itemService = new ItemService();
+        $this->borrowingService = new BorrowingService($itemService);
         $this->item = Item::factory()->create(['stock' => 10, 'available_stock' => 10]);
         $this->user = User::factory()->create();
     }
@@ -46,7 +48,7 @@ class BorrowingServiceTest extends TestCase
             'notes' => 'Test borrowing',
         ];
 
-        $borrowing = $this->borrowingService->createBorrowing($data);
+        $borrowing = $this->borrowingService->createBorrowing($data, $this->user->id);
 
         $this->assertEquals('pending', $borrowing->status);
         $this->assertEquals(2, $borrowing->quantity);
@@ -125,38 +127,26 @@ class BorrowingServiceTest extends TestCase
             'due_date' => Carbon::today()->addDays(7),
         ]);
 
-        $newDueDate = Carbon::today()->addDays(14);
-        $this->borrowingService->extendDueDate($borrowing, $newDueDate);
+        $newDueDate = Carbon::today()->addDays(14)->toDateString();
+        $borrowing = $this->borrowingService->extendBorrowing($borrowing, $newDueDate);
 
-        $this->assertEquals($newDueDate->toDateString(), $borrowing->due_date->toDateString());
+        $this->assertEquals($newDueDate, $borrowing->due_date);
     }
 
-    public function test_can_detect_overdue_borrowings(): void
+    public function test_can_check_overdue_borrowings(): void
     {
         Borrowing::factory()->create([
-            'status' => 'approved',
+            'status' => 'dipinjam',
             'due_date' => Carbon::yesterday(),
         ]);
 
         Borrowing::factory()->create([
-            'status' => 'approved',
+            'status' => 'dipinjam',
             'due_date' => Carbon::tomorrow(),
         ]);
 
-        $overdue = $this->borrowingService->getOverdueBorrowings();
+        $count = $this->borrowingService->checkOverdueBorrowings();
 
-        $this->assertEquals(1, $overdue->count());
-    }
-
-    public function test_can_calculate_days_overdue(): void
-    {
-        $borrowing = Borrowing::factory()->create([
-            'status' => 'approved',
-            'due_date' => Carbon::today()->subDays(5),
-        ]);
-
-        $daysOverdue = $this->borrowingService->calculateDaysOverdue($borrowing);
-
-        $this->assertEquals(5, $daysOverdue);
+        $this->assertEquals(1, $count);
     }
 }

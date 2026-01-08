@@ -104,6 +104,9 @@ class ReportService
             ->orderBy('due_date')
             ->get()
             ->map(function ($borrowing) {
+                /** @var \Carbon\Carbon $dueDate */
+                $dueDate = $borrowing->due_date;
+                
                 return [
                     'id' => $borrowing->id,
                     'code' => $borrowing->code,
@@ -111,8 +114,8 @@ class ReportService
                     'user_email' => $borrowing->user->email,
                     'item' => $borrowing->item->name,
                     'item_code' => $borrowing->item->code,
-                    'due_date' => $borrowing->due_date->format('Y-m-d'),
-                    'days_overdue' => now()->diffInDays($borrowing->due_date),
+                    'due_date' => $dueDate->format('Y-m-d'),
+                    'days_overdue' => now()->diffInDays($dueDate),
                     'quantity' => $borrowing->quantity,
                 ];
             })
@@ -165,13 +168,18 @@ class ReportService
             ->limit(10)
             ->get()
             ->map(function ($borrowing) {
+                /** @var \Carbon\Carbon $borrowDate */
+                $borrowDate = $borrowing->borrow_date;
+                /** @var \Carbon\Carbon $dueDate */
+                $dueDate = $borrowing->due_date;
+                
                 return [
                     'id' => $borrowing->id,
                     'code' => $borrowing->code,
                     'item' => $borrowing->item->name,
                     'quantity' => $borrowing->quantity,
-                    'borrow_date' => $borrowing->borrow_date->format('Y-m-d'),
-                    'due_date' => $borrowing->due_date->format('Y-m-d'),
+                    'borrow_date' => $borrowDate->format('Y-m-d'),
+                    'due_date' => $dueDate->format('Y-m-d'),
                     'return_date' => $borrowing->return_date?->format('Y-m-d'),
                     'status' => $borrowing->status,
                 ];

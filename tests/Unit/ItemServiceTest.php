@@ -24,12 +24,10 @@ class ItemServiceTest extends TestCase
 
     public function test_can_generate_unique_item_code(): void
     {
-        $category = Category::factory()->create(['name' => 'Electronics']);
-        
-        $code1 = $this->itemService->generateItemCode($category);
-        $code2 = $this->itemService->generateItemCode($category);
+        $code1 = $this->itemService->generateItemCode();
+        $code2 = $this->itemService->generateItemCode();
 
-        $this->assertStringStartsWith('ELE', $code1);
+        $this->assertStringStartsWith('ITM', $code1);
         $this->assertNotEquals($code1, $code2);
     }
 
@@ -51,7 +49,7 @@ class ItemServiceTest extends TestCase
         $item = $this->itemService->createItem($data);
 
         $this->assertNotNull($item->image);
-        Storage::disk('public')->assertExists('items/' . basename($item->image));
+        $this->assertTrue(Storage::disk('public')->exists('items/' . basename($item->image)));
     }
 
     public function test_available_stock_is_set_correctly_on_creation(): void
@@ -113,7 +111,7 @@ class ItemServiceTest extends TestCase
 
         $this->itemService->updateItem($item, $data);
 
-        Storage::disk('public')->assertMissing('items/old.jpg');
+        $this->assertFalse(Storage::disk('public')->exists('items/old.jpg'));
     }
 
     public function test_can_delete_item_with_image(): void
@@ -127,7 +125,7 @@ class ItemServiceTest extends TestCase
 
         $this->itemService->deleteItem($item);
 
-        Storage::disk('public')->assertMissing('items/test.jpg');
+        $this->assertFalse(Storage::disk('public')->exists('items/test.jpg'));
         $this->assertDatabaseMissing('items', ['id' => $item->id]);
     }
 
@@ -152,6 +150,6 @@ class ItemServiceTest extends TestCase
         $this->assertNotNull($item->image);
         
         // Check that image was processed and saved
-        Storage::disk('public')->assertExists('items/' . basename($item->image));
+        $this->assertTrue(Storage::disk('public')->exists('items/' . basename($item->image)));
     }
 }
