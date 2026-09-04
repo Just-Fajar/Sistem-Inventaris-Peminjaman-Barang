@@ -29,6 +29,7 @@ class Borrowing extends Model
         'status',
         'notes',
         'approved_by',
+        'approved_at',
     ];
 
     /**
@@ -40,6 +41,7 @@ class Borrowing extends Model
         'borrow_date' => 'datetime',
         'due_date' => 'datetime',
         'return_date' => 'datetime',
+        'approved_at' => 'datetime',
         'quantity' => 'integer',
     ];
 
