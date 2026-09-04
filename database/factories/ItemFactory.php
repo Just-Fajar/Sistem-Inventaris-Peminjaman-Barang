@@ -30,9 +30,29 @@ class ItemFactory extends Factory
             'category_id' => Category::factory(),
             'stock' => $stock,
             'available_stock' => $stock,
-            'condition' => $this->faker->randomElement(['baik', 'rusak', 'hilang']),
+            'condition' => 'baik',
             'description' => $this->faker->optional()->sentence(),
             'image' => $this->faker->optional()->imageUrl(640, 480, 'technics'),
         ];
+    }
+
+    /**
+     * Indicate that the item is damaged.
+     */
+    public function damaged(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'condition' => 'rusak',
+        ]);
+    }
+
+    /**
+     * Indicate that the item is lost.
+     */
+    public function lost(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'condition' => 'hilang',
+        ]);
     }
 }

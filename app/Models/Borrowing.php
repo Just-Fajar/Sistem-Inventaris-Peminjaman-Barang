@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Borrowing extends Model
 {
@@ -128,14 +129,26 @@ class Borrowing extends Model
             return false;
         }
 
-        $this->return_date = now();
-        $this->status = 'dikembalikan';
-        $this->save();
+        return DB::transaction(function () {
+            // Re-check after acquiring transaction to prevent race conditions
+            $this->refresh();
+            if ($this->status === 'dikembalikan') {
+                return false;
+            }
 
-        // Update item stock
-        $this->item->increaseStock($this->quantity);
+            $item = Item::lockForUpdate()->find($this->item_id);
 
-        return true;
+            $this->return_date = now();
+            $this->status = 'dikembalikan';
+            $this->save();
+
+            // Update item stock
+            if ($item) {
+                $item->increaseStock($this->quantity);
+            }
+
+            return true;
+        });
     }
 
     /**
