@@ -26,7 +26,7 @@ class UpdateItemRequest extends FormRequest
             'category_id' => 'sometimes|required|exists:categories,id',
             'description' => 'nullable|string|max:1000',
             'stock' => 'sometimes|required|integer|min:0|max:999999',
-            'condition' => 'sometimes|required|in:baik,rusak',
+            'condition' => 'sometimes|required|in:baik,rusak,hilang',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }
