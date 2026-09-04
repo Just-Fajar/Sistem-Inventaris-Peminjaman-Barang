@@ -23,16 +23,15 @@ class BorrowingFactory extends Factory
         $dueDate = (clone $borrowDate)->modify('+7 days');
         
         return [
-            'code' => 'BRW-' . date('Y') . '-' . $this->faker->unique()->numerify('####'),
+            'borrow_code' => 'BRW-' . date('Y') . '-' . $this->faker->unique()->numerify('####'),
             'user_id' => User::factory(),
             'item_id' => Item::factory(),
             'quantity' => $this->faker->numberBetween(1, 5),
             'borrow_date' => $borrowDate,
             'due_date' => $dueDate,
             'return_date' => null,
-            'status' => $this->faker->randomElement(['pending', 'approved', 'returned', 'rejected']),
+            'status' => $this->faker->randomElement(['dipinjam', 'dikembalikan', 'terlambat']),
             'notes' => $this->faker->optional()->sentence(),
-            'return_condition' => null,
             'approved_by' => null,
         ];
     }
