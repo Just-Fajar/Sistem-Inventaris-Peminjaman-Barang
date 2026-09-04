@@ -21,7 +21,14 @@ class CheckOverdueBorrowings extends Command
      *
      * @var string
      */
-    protected $description = 'Check for overdue borrowings and send notifications';
+    protected $description = 'Check for overdue borrowings, send notifications, and update status to terlambat';
+
+    /**
+     * The command aliases.
+     *
+     * @var array<int, string>
+     */
+    protected $aliases = ['borrowings:update-overdue'];
 
     /**
      * Execute the console command.
@@ -48,13 +55,19 @@ class CheckOverdueBorrowings extends Command
                 );
                 
                 $totalNotified++;
-                $this->warn("Overdue notification sent to {$borrowing->user->name} for borrowing {$borrowing->code} ({$daysOverdue} days late)");
+                $this->warn("Overdue notification sent to {$borrowing->user->name} for borrowing {$borrowing->borrow_code} ({$daysOverdue} days late)");
             } catch (\Exception $e) {
-                $this->error("Failed to send notification for borrowing {$borrowing->code}: {$e->getMessage()}");
+                $this->error("Failed to send notification for borrowing {$borrowing->borrow_code}: {$e->getMessage()}");
             }
         }
 
+        // Batch update status to 'terlambat'
+        $updatedCount = Borrowing::where('status', 'dipinjam')
+            ->where('due_date', '<', Carbon::today())
+            ->update(['status' => 'terlambat']);
+
         $this->info("Total overdue notifications sent: {$totalNotified}");
+        $this->info("Total borrowings updated to 'terlambat': {$updatedCount}");
         
         return Command::SUCCESS;
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Borrowing;
 use App\Models\Item;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -63,9 +64,14 @@ class BorrowingController extends Controller
         }
 
         // Filter overdue only
-        if ($request->has('overdue') && $request->overdue === 'true') {
-            $query->where('status', 'dipinjam')
-                  ->where('due_date', '<', now());
+        if ($request->has('overdue') && ($request->overdue === 'true' || $request->overdue === true || $request->overdue === '1' || $request->overdue === 1)) {
+            $query->where(function ($q) {
+                $q->where('status', 'terlambat')
+                  ->orWhere(function ($sub) {
+                      $sub->where('status', 'dipinjam')
+                          ->where('due_date', '<', Carbon::today());
+                  });
+            });
         }
 
         // Sorting
@@ -79,10 +85,10 @@ class BorrowingController extends Controller
             $query->latest();
         }
 
-        // Update overdue status
-        $query->get()->each(function ($borrowing) {
-            $borrowing->updateOverdueStatus();
-        });
+        // Batch update overdue status atomically without loading all records into memory (eliminating N+1 query)
+        Borrowing::where('status', 'dipinjam')
+            ->where('due_date', '<', Carbon::today())
+            ->update(['status' => 'terlambat']);
 
         $borrowings = $query->paginate($request->per_page ?? 15);
 
