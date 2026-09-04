@@ -65,7 +65,7 @@ class BorrowingsExport implements FromCollection, WithHeadings, WithMapping, Wit
     public function map($borrowing): array
     {
         return [
-            $borrowing->code,
+            $borrowing->borrow_code,
             $borrowing->user->name,
             $borrowing->item->name,
             $borrowing->item->category->name,

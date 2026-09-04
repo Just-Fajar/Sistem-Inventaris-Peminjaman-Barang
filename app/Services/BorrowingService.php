@@ -28,7 +28,7 @@ class BorrowingService
             ->latest('id')
             ->first();
         
-        $sequence = $lastBorrowing ? ((int) substr($lastBorrowing->code, -4)) + 1 : 1;
+        $sequence = $lastBorrowing ? ((int) substr($lastBorrowing->borrow_code, -4)) + 1 : 1;
         
         return "BRW-{$date}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
@@ -38,7 +38,7 @@ class BorrowingService
      */
     public function createBorrowing(array $data, int $userId): Borrowing
     {
-        $data['code'] = $this->generateBorrowingCode();
+        $data['borrow_code'] = $this->generateBorrowingCode();
         $data['user_id'] = $userId;
         $data['status'] = 'pending';
 

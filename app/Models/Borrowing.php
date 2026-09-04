@@ -43,6 +43,23 @@ class Borrowing extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'code',
+    ];
+
+    /**
+     * Get code attribute alias for borrow_code.
+     */
+    public function getCodeAttribute(): ?string
+    {
+        return $this->borrow_code;
+    }
+
+    /**
      * Get the user that owns the borrowing
      */
     public function user()
