@@ -46,9 +46,10 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('categories', CategoryController::class);
 
         // Items
-        Route::apiResource('items', ItemController::class);
         Route::delete('/items/bulk-delete', [ItemController::class, 'bulkDelete']);
         Route::get('/items/search-suggestions', [ItemController::class, 'searchSuggestions']);
+        Route::post('/items/{item}', [ItemController::class, 'update']);
+        Route::apiResource('items', ItemController::class);
 
         // Borrowings
         Route::apiResource('borrowings', BorrowingController::class);
@@ -111,9 +112,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     });
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::apiResource('categories', CategoryController::class);
-    Route::apiResource('items', ItemController::class);
     Route::delete('/items/bulk-delete', [ItemController::class, 'bulkDelete']);
     Route::get('/items/search-suggestions', [ItemController::class, 'searchSuggestions']);
+    Route::post('/items/{item}', [ItemController::class, 'update']);
+    Route::apiResource('items', ItemController::class);
     Route::apiResource('borrowings', BorrowingController::class);
     Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
     Route::match(['post', 'put'], '/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);

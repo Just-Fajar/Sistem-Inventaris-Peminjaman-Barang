@@ -2,15 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\ItemException;
 use App\Http\Controllers\Controller;
-use App\Models\Item;
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
+use App\Models\Item;
+use App\Services\ItemService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ItemController extends Controller
 {
+    protected ItemService $itemService;
+
+    public function __construct(ItemService $itemService)
+    {
+        $this->itemService = $itemService;
+    }
+
     /**
      * Display a listing of items
      */
@@ -95,17 +103,11 @@ class ItemController extends Controller
     {
         $validated = $request->validated();
 
-        // Generate unique code
-        $validated['code'] = Item::generateCode();
-        $validated['available_stock'] = $validated['stock'];
-
-        // Handle image upload
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('items', 'public');
+            $validated['image'] = $request->file('image');
         }
 
-        $item = Item::create($validated);
-        $item->load('category');
+        $item = $this->itemService->createItem($validated);
 
         return response()->json([
             'message' => 'Item created successfully',
@@ -132,27 +134,15 @@ class ItemController extends Controller
     {
         $validated = $request->validated();
 
-        // Update available stock if total stock changes
-        if (isset($validated['stock'])) {
-            $difference = $validated['stock'] - $item->stock;
-            $validated['available_stock'] = $item->available_stock + $difference;
-        }
-
-        // Handle image upload
         if ($request->hasFile('image')) {
-            // Delete old image
-            if ($item->image) {
-                Storage::disk('public')->delete($item->image);
-            }
-            $validated['image'] = $request->file('image')->store('items', 'public');
+            $validated['image'] = $request->file('image');
         }
 
-        $item->update($validated);
-        $item->load('category');
+        $updatedItem = $this->itemService->updateItem($item, $validated);
 
         return response()->json([
             'message' => 'Item updated successfully',
-            'data' => $item,
+            'data' => $updatedItem,
         ]);
     }
 
@@ -161,23 +151,17 @@ class ItemController extends Controller
      */
     public function destroy(Item $item)
     {
-        // Check if item has active borrowings
-        if ($item->activeBorrowings()->count() > 0) {
+        try {
+            $this->itemService->deleteItem($item);
+
             return response()->json([
-                'message' => 'Cannot delete item with active borrowings',
-            ], 422);
+                'message' => 'Item deleted successfully',
+            ]);
+        } catch (ItemException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        // Delete image
-        if ($item->image) {
-            Storage::disk('public')->delete($item->image);
-        }
-
-        $item->delete();
-
-        return response()->json([
-            'message' => 'Item deleted successfully',
-        ]);
     }
 
     /**
@@ -190,36 +174,15 @@ class ItemController extends Controller
             'ids.*' => 'exists:items,id',
         ]);
 
-        $items = Item::whereIn('id', $validated['ids'])->get();
+        try {
+            $result = $this->itemService->bulkDeleteItems($validated['ids']);
 
-        // Check if any item has active borrowings
-        $itemsWithBorrowings = [];
-        foreach ($items as $item) {
-            if ($item->activeBorrowings()->count() > 0) {
-                $itemsWithBorrowings[] = $item->name;
-            }
+            return response()->json($result);
+        } catch (ItemException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        if (!empty($itemsWithBorrowings)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Some items have active borrowings and cannot be deleted',
-                'items' => $itemsWithBorrowings,
-            ], 422);
-        }
-
-        // Delete images and items
-        foreach ($items as $item) {
-            if ($item->image) {
-                Storage::disk('public')->delete($item->image);
-            }
-            $item->delete();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => count($items) . ' items deleted successfully',
-        ]);
     }
 
     /**
