@@ -109,7 +109,8 @@ class ReportService
                 
                 return [
                     'id' => $borrowing->id,
-                    'code' => $borrowing->code,
+                    'borrow_code' => $borrowing->borrow_code,
+                    'code' => $borrowing->borrow_code,
                     'user' => $borrowing->user->name,
                     'user_email' => $borrowing->user->email,
                     'item' => $borrowing->item->name,
@@ -175,7 +176,8 @@ class ReportService
                 
                 return [
                     'id' => $borrowing->id,
-                    'code' => $borrowing->code,
+                    'borrow_code' => $borrowing->borrow_code,
+                    'code' => $borrowing->borrow_code,
                     'item' => $borrowing->item->name,
                     'quantity' => $borrowing->quantity,
                     'borrow_date' => $borrowDate->format('Y-m-d'),
