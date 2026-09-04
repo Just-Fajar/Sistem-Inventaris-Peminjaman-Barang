@@ -3,19 +3,24 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Borrowing;
+use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BorrowingsExport;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class ReportController extends Controller
 {
+    public function __construct(
+        protected ReportService $reportService
+    ) {}
+
     /**
      * Get borrowing report with filters
      */
-    public function borrowings(Request $request)
+    public function borrowings(Request $request): JsonResponse
     {
         $request->validate([
             'start_date' => 'nullable|date',
@@ -25,153 +30,48 @@ class ReportController extends Controller
             'item_id' => 'nullable|exists:items,id',
         ]);
 
-        $query = Borrowing::with(['user', 'item.category', 'approver']);
+        $filters = $request->only(['start_date', 'end_date', 'status', 'user_id', 'item_id']);
+        $report = $this->reportService->getBorrowingReport($filters);
 
-        // Date range filter
-        if ($request->has('start_date')) {
-            $query->whereDate('borrow_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->whereDate('borrow_date', '<=', $request->end_date);
-        }
-
-        // Status filter
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // User filter
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        // Item filter
-        if ($request->has('item_id')) {
-            $query->where('item_id', $request->item_id);
-        }
-
-        $borrowings = $query->orderBy('borrow_date', 'desc')->get();
-
-        // Statistics
-        $statistics = [
-            'total_borrowings' => $borrowings->count(),
-            'active_borrowings' => $borrowings->where('status', 'dipinjam')->count(),
-            'returned_borrowings' => $borrowings->where('status', 'dikembalikan')->count(),
-            'overdue_borrowings' => $borrowings->where('status', 'terlambat')->count(),
-            'total_items_borrowed' => $borrowings->sum('quantity'),
-        ];
-
-        return response()->json([
-            'data' => $borrowings,
-            'statistics' => $statistics,
-            'filters' => $request->only(['start_date', 'end_date', 'status', 'user_id', 'item_id']),
-        ]);
+        return response()->json($report);
     }
 
     /**
      * Get items report
      */
-    public function items(Request $request)
+    public function items(Request $request): JsonResponse
     {
-        $items = \App\Models\Item::with(['category', 'borrowings'])
-            ->withCount([
-                'borrowings',
-                'borrowings as active_borrowings_count' => function ($query) {
-                    $query->where('status', 'dipinjam');
-                },
-            ])
-            ->get();
+        $report = $this->reportService->getItemReport();
 
-        $statistics = [
-            'total_items' => $items->count(),
-            'available_items' => $items->where('available_stock', '>', 0)->count(),
-            'out_of_stock' => $items->where('available_stock', 0)->count(),
-            'total_stock' => $items->sum('stock'),
-            'available_stock' => $items->sum('available_stock'),
-        ];
-
-        return response()->json([
-            'data' => $items,
-            'statistics' => $statistics,
-        ]);
+        return response()->json($report);
     }
 
     /**
      * Get overdue borrowings report
      */
-    public function overdue(Request $request)
+    public function overdue(Request $request): JsonResponse
     {
-        $overdueBorrowings = Borrowing::with(['user', 'item', 'approver'])
-            ->where('status', 'terlambat')
-            ->orWhere(function ($query) {
-                $query->where('status', 'dipinjam')
-                      ->where('due_date', '<', Carbon::now());
-            })
-            ->orderBy('due_date', 'asc')
-            ->get();
+        $report = $this->reportService->getOverdueReport();
 
-        // Update overdue status
-        $overdueBorrowings->each(function ($borrowing) {
-            $borrowing->updateOverdueStatus();
-        });
-
-        return response()->json([
-            'data' => $overdueBorrowings,
-            'total' => $overdueBorrowings->count(),
-        ]);
+        return response()->json($report);
     }
 
     /**
      * Get monthly summary
      */
-    public function monthly(Request $request)
+    public function monthly(Request $request): JsonResponse
     {
-        $year = $request->input('year', Carbon::now()->year);
-        $month = $request->input('month', Carbon::now()->month);
-
-        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
-        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
-
-        $borrowings = Borrowing::with(['user', 'item'])
-            ->whereBetween('borrow_date', [$startDate, $endDate])
-            ->get();
-
-        $statistics = [
-            'total_borrowings' => $borrowings->count(),
-            'active_borrowings' => $borrowings->where('status', 'dipinjam')->count(),
-            'returned_borrowings' => $borrowings->where('status', 'dikembalikan')->count(),
-            'overdue_borrowings' => $borrowings->where('status', 'terlambat')->count(),
-            'total_items_borrowed' => $borrowings->sum('quantity'),
-        ];
-
-        // Daily breakdown
-        $dailyBreakdown = [];
-        for ($day = 1; $day <= $endDate->day; $day++) {
-            $date = Carbon::create($year, $month, $day);
-            $dailyBorrowings = $borrowings->filter(function ($borrowing) use ($date) {
-                /** @var \Carbon\Carbon $borrowDate */
-                $borrowDate = $borrowing->borrow_date;
-                return $borrowDate->format('Y-m-d') === $date->format('Y-m-d');
-            });
-
-            $dailyBreakdown[] = [
-                'date' => $date->format('Y-m-d'),
-                'count' => $dailyBorrowings->count(),
-                'quantity' => $dailyBorrowings->sum('quantity'),
-            ];
-        }
-
-        return response()->json([
-            'period' => [
-                'year' => $year,
-                'month' => $month,
-                'start_date' => $startDate->format('Y-m-d'),
-                'end_date' => $endDate->format('Y-m-d'),
-            ],
-            'statistics' => $statistics,
-            'daily_breakdown' => $dailyBreakdown,
-            'borrowings' => $borrowings,
+        $request->validate([
+            'year' => 'nullable|integer|min:2000|max:2100',
+            'month' => 'nullable|integer|min:1|max:12',
         ]);
+
+        $year = (int) $request->input('year', Carbon::now()->year);
+        $month = (int) $request->input('month', Carbon::now()->month);
+
+        $report = $this->reportService->getMonthlyReport($year, $month);
+
+        return response()->json($report);
     }
 
     /**
@@ -185,30 +85,11 @@ class ReportController extends Controller
             'status' => 'nullable|in:dipinjam,dikembalikan,terlambat',
         ]);
 
-        $query = Borrowing::with(['user', 'item.category', 'approver']);
-
-        if ($request->has('start_date')) {
-            $query->whereDate('borrow_date', '>=', $request->start_date);
-        }
-        if ($request->has('end_date')) {
-            $query->whereDate('borrow_date', '<=', $request->end_date);
-        }
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $borrowings = $query->orderBy('borrow_date', 'desc')->get();
-
-        $statistics = [
-            'total' => $borrowings->count(),
-            'active' => $borrowings->where('status', 'dipinjam')->count(),
-            'returned' => $borrowings->where('status', 'dikembalikan')->count(),
-            'overdue' => $borrowings->where('status', 'terlambat')->count(),
-        ];
+        $report = $this->reportService->getBorrowingReport($request->all());
 
         $pdf = Pdf::loadView('reports.borrowings-pdf', [
-            'borrowings' => $borrowings,
-            'statistics' => $statistics,
+            'borrowings' => $report['data'],
+            'statistics' => $report['statistics'],
             'filters' => $request->only(['start_date', 'end_date', 'status']),
             'generated_at' => now()->format('d/m/Y H:i'),
         ]);
