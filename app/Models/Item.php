@@ -75,6 +75,14 @@ class Item extends Model
      */
     public function decreaseStock(int $quantity): void
     {
+        if ($quantity <= 0) {
+            throw new \InvalidArgumentException('Quantity must be greater than zero.');
+        }
+
+        if ($this->available_stock < $quantity) {
+            throw new \InvalidArgumentException("Cannot decrease stock below zero. Current stock: {$this->available_stock}, requested: {$quantity}");
+        }
+
         $this->available_stock -= $quantity;
         $this->save();
     }
@@ -84,6 +92,10 @@ class Item extends Model
      */
     public function increaseStock(int $quantity): void
     {
+        if ($quantity <= 0) {
+            throw new \InvalidArgumentException('Quantity must be greater than zero.');
+        }
+
         $this->available_stock += $quantity;
         $this->save();
     }

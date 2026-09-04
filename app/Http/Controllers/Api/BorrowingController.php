@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Borrowing;
 use App\Models\Item;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BorrowingController extends Controller
 {
@@ -101,33 +102,43 @@ class BorrowingController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $item = Item::findOrFail($validated['item_id']);
+        $result = DB::transaction(function () use ($validated, $request) {
+            $item = Item::lockForUpdate()->findOrFail($validated['item_id']);
 
-        // Check if item is available
-        if (!$item->isAvailable($validated['quantity'])) {
-            return response()->json([
-                'message' => 'Item is not available in requested quantity',
-                'available_stock' => $item->available_stock,
-            ], 422);
-        }
+            // Check if item is available
+            if (!$item->isAvailable($validated['quantity'])) {
+                return [
+                    'status' => 422,
+                    'payload' => [
+                        'message' => 'Item is not available in requested quantity',
+                        'available_stock' => $item->available_stock,
+                    ],
+                ];
+            }
 
-        // Generate unique code
-        $validated['borrow_code'] = Borrowing::generateCode();
-        $validated['user_id'] = $request->user()->id;
-        $validated['status'] = 'dipinjam';
+            // Generate unique code
+            $validated['borrow_code'] = Borrowing::generateCode();
+            $validated['user_id'] = $request->user()->id;
+            $validated['status'] = 'dipinjam';
 
-        // Create borrowing
-        $borrowing = Borrowing::create($validated);
+            // Create borrowing
+            $borrowing = Borrowing::create($validated);
 
-        // Update item stock
-        $item->decreaseStock($validated['quantity']);
+            // Update item stock
+            $item->decreaseStock($validated['quantity']);
 
-        $borrowing->load(['user', 'item', 'approver']);
+            $borrowing->load(['user', 'item', 'approver']);
 
-        return response()->json([
-            'message' => 'Borrowing created successfully',
-            'data' => $borrowing,
-        ], 201);
+            return [
+                'status' => 201,
+                'payload' => [
+                    'message' => 'Borrowing created successfully',
+                    'data' => $borrowing,
+                ],
+            ];
+        });
+
+        return response()->json($result['payload'], $result['status']);
     }
 
     /**
@@ -148,26 +159,42 @@ class BorrowingController extends Controller
      */
     public function return(Request $request, Borrowing $borrowing)
     {
-        if ($borrowing->status === 'dikembalikan') {
-            return response()->json([
-                'message' => 'Item already returned',
-            ], 422);
-        }
+        $result = DB::transaction(function () use ($borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        $success = $borrowing->processReturn();
+            if ($lockedBorrowing->status === 'dikembalikan') {
+                return [
+                    'status' => 422,
+                    'payload' => [
+                        'message' => 'Item already returned',
+                    ],
+                ];
+            }
 
-        if (!$success) {
-            return response()->json([
-                'message' => 'Failed to process return',
-            ], 500);
-        }
+            $success = $lockedBorrowing->processReturn();
 
-        $borrowing->load(['user', 'item', 'approver']);
+            if (!$success) {
+                return [
+                    'status' => 500,
+                    'payload' => [
+                        'message' => 'Failed to process return',
+                    ],
+                ];
+            }
 
-        return response()->json([
-            'message' => 'Item returned successfully',
-            'data' => $borrowing,
-        ]);
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return [
+                'status' => 200,
+                'payload' => [
+                    'message' => 'Item returned successfully',
+                    'data' => $lockedBorrowing,
+                ],
+            ];
+        });
+
+        return response()->json($result['payload'], $result['status']);
     }
 
     /**
