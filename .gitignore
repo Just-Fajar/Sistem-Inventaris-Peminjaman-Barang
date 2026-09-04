@@ -24,3 +24,6 @@ Homestead.yaml
 Thumbs.db
 perbaikan.md
 PROJECT_ANALYSIS_AND_RECOMMENDATIONS.md
+docs/
+storage/framework/*.php
+storage/framework/lsp-*.php
