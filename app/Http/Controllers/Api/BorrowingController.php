@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\BorrowingException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreBorrowingRequest;
+use App\Http\Requests\UpdateBorrowingRequest;
 use App\Models\Borrowing;
 use App\Services\BorrowingService;
 use Carbon\Carbon;
@@ -103,18 +105,10 @@ class BorrowingController extends Controller
     /**
      * Store a newly created borrowing
      */
-    public function store(Request $request)
+    public function store(StoreBorrowingRequest $request)
     {
-        $validated = $request->validate([
-            'item_id' => 'required|exists:items,id',
-            'quantity' => 'required|integer|min:1',
-            'borrow_date' => 'required|date',
-            'due_date' => 'required|date|after:borrow_date',
-            'notes' => 'nullable|string',
-        ]);
-
         try {
-            $borrowing = $this->borrowingService->createBorrowing($validated, $request->user()->id);
+            $borrowing = $this->borrowingService->createBorrowing($request->validated(), $request->user()->id);
 
             return response()->json([
                 'message' => 'Borrowing created successfully',
@@ -212,7 +206,7 @@ class BorrowingController extends Controller
     /**
      * Update the specified borrowing
      */
-    public function update(Request $request, Borrowing $borrowing)
+    public function update(UpdateBorrowingRequest $request, Borrowing $borrowing)
     {
         if ($borrowing->status === 'dikembalikan') {
             return response()->json([
@@ -220,12 +214,7 @@ class BorrowingController extends Controller
             ], 422);
         }
 
-        $validated = $request->validate([
-            'due_date' => 'sometimes|date|after:borrow_date',
-            'notes' => 'nullable|string',
-        ]);
-
-        $borrowing->update($validated);
+        $borrowing->update($request->validated());
         $borrowing->load(['user', 'item', 'approver']);
 
         return response()->json([
