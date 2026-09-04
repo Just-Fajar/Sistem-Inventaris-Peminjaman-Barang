@@ -26,7 +26,7 @@ class StoreItemRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string|max:1000',
             'stock' => 'required|integer|min:0|max:999999',
-            'condition' => 'required|in:baik,rusak',
+            'condition' => 'required|in:baik,rusak,hilang',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }
