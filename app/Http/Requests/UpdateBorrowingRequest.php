@@ -15,6 +15,25 @@ class UpdateBorrowingRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $borrowing = $this->route('borrowing');
+        if ($borrowing && !$this->has('borrow_date')) {
+            $borrowDate = $borrowing instanceof \App\Models\Borrowing
+                ? $borrowing->borrow_date
+                : \App\Models\Borrowing::find($borrowing)?->borrow_date;
+
+            if ($borrowDate) {
+                $this->merge([
+                    'borrow_date' => \Carbon\Carbon::parse($borrowDate)->toDateString(),
+                ]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>

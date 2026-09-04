@@ -51,21 +51,4 @@ class StoreBorrowingRequest extends FormRequest
             'notes.max' => 'Catatan maksimal 500 karakter',
         ];
     }
-
-    /**
-     * Configure the validator instance.
-     */
-    public function withValidator($validator)
-    {
-        $validator->after(function ($validator) {
-            $item = \App\Models\Item::find($this->item_id);
-            
-            if ($item && $this->quantity > $item->available_stock) {
-                $validator->errors()->add(
-                    'quantity',
-                    "Stok tidak mencukupi. Stok tersedia: {$item->available_stock}"
-                );
-            }
-        });
-    }
 }
