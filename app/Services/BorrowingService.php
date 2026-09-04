@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
+use App\Exceptions\BorrowingException;
 use App\Jobs\SendBorrowingNotification;
 use App\Jobs\SendOverdueNotification;
 use App\Models\Borrowing;
 use App\Models\Item;
-use App\Notifications\BorrowingApprovedNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class BorrowingService
 {
-    protected $itemService;
+    protected ItemService $itemService;
 
     public function __construct(ItemService $itemService)
     {
@@ -19,7 +20,7 @@ class BorrowingService
     }
 
     /**
-     * Generate unique borrowing code
+     * Generate unique borrowing code.
      */
     public function generateBorrowingCode(): string
     {
@@ -27,140 +28,256 @@ class BorrowingService
         $lastBorrowing = Borrowing::whereDate('created_at', today())
             ->latest('id')
             ->first();
-        
+
         $sequence = $lastBorrowing ? ((int) substr($lastBorrowing->borrow_code, -4)) + 1 : 1;
-        
-        return "BRW-{$date}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+
+        return "BRW-{$date}-" . str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Create a new borrowing
+     * Create a new borrowing.
+     *
+     * @throws BorrowingException
      */
     public function createBorrowing(array $data, int $userId): Borrowing
     {
-        $data['borrow_code'] = $this->generateBorrowingCode();
-        $data['user_id'] = $userId;
-        $data['status'] = 'pending';
+        return DB::transaction(function () use ($data, $userId) {
+            /** @var Item $item */
+            $item = Item::lockForUpdate()->findOrFail($data['item_id']);
 
-        $item = Item::findOrFail($data['item_id']);
-        
-        // Check stock availability
-        if ($item->available_stock < $data['quantity']) {
-            throw new \Exception("Stok tidak mencukupi. Stok tersedia: {$item->available_stock}");
-        }
+            // Check stock and condition availability
+            if (!$item->isAvailable($data['quantity'])) {
+                throw new BorrowingException(
+                    'Item is not available in requested quantity',
+                    422,
+                    ['available_stock' => $item->available_stock]
+                );
+            }
 
-        $borrowing = Borrowing::create($data);
+            $data['borrow_code'] = $this->generateBorrowingCode();
+            $data['user_id'] = $userId;
+            $status = $data['status'] ?? 'dipinjam';
+            $data['status'] = $status;
 
-        return $borrowing;
+            $borrowing = Borrowing::create($data);
+
+            // Deduct stock if not pending
+            if ($status !== 'pending') {
+                $this->itemService->decreaseStock($item, $data['quantity']);
+            }
+
+            $borrowing->load(['user', 'item', 'approver']);
+
+            return $borrowing;
+        });
     }
 
     /**
-     * Approve a borrowing request
+     * Approve a borrowing request (admin).
+     *
+     * @throws BorrowingException
      */
     public function approveBorrowing(Borrowing $borrowing, int $approverId): Borrowing
     {
-        if ($borrowing->status !== 'pending') {
-            throw new \Exception('Peminjaman sudah diproses');
+        // Initial guard
+        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            throw new BorrowingException('Peminjaman sudah diproses atau sudah disetujui.', 400);
         }
 
-        $item = $borrowing->item;
-        
-        // Decrease available stock
-        $this->itemService->decreaseStock($item, $borrowing->quantity);
+        $approvedBorrowing = DB::transaction(function () use ($borrowing, $approverId) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        $borrowing->update([
-            'status' => 'dipinjam',
-            'approved_by' => $approverId,
-            'approved_at' => now(),
-        ]);
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+                throw new BorrowingException('Peminjaman sudah diproses atau sudah disetujui.', 400);
+            }
+
+            /** @var Item $item */
+            $item = Item::lockForUpdate()->findOrFail($lockedBorrowing->item_id);
+
+            // If status is pending, deduct stock upon approval
+            if ($lockedBorrowing->status === 'pending') {
+                if (!$item->isAvailable($lockedBorrowing->quantity)) {
+                    throw new BorrowingException(
+                        'Stok barang tidak mencukupi untuk disetujui.',
+                        422,
+                        ['available_stock' => $item->available_stock]
+                    );
+                }
+
+                $this->itemService->decreaseStock($item, $lockedBorrowing->quantity);
+            }
+
+            $lockedBorrowing->status = 'dipinjam';
+            $lockedBorrowing->approved_by = $approverId;
+            $lockedBorrowing->approved_at = now();
+            $lockedBorrowing->save();
+
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return $lockedBorrowing;
+        });
 
         // Dispatch queue job for notification
-        SendBorrowingNotification::dispatch($borrowing->fresh(), 'approved');
+        try {
+            SendBorrowingNotification::dispatch($approvedBorrowing, 'approved');
+        } catch (\Throwable $e) {
+            logger()->warning('Failed to dispatch SendBorrowingNotification: ' . $e->getMessage());
+        }
 
-        return $borrowing->fresh();
+        return $approvedBorrowing;
     }
 
     /**
-     * Return a borrowed item
+     * Reject a borrowing request (admin).
+     *
+     * @throws BorrowingException
+     */
+    public function rejectBorrowing(Borrowing $borrowing): Borrowing
+    {
+        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            throw new BorrowingException('Peminjaman sudah diproses.', 400);
+        }
+
+        return DB::transaction(function () use ($borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
+
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+                throw new BorrowingException('Peminjaman sudah diproses.', 400);
+            }
+
+            $lockedBorrowing->status = 'rejected';
+            $lockedBorrowing->save();
+
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return $lockedBorrowing;
+        });
+    }
+
+    /**
+     * Return a borrowed item.
+     *
+     * @throws BorrowingException
      */
     public function returnBorrowing(Borrowing $borrowing, ?string $returnDate = null): Borrowing
     {
-        if ($borrowing->status !== 'dipinjam') {
-            throw new \Exception('Status peminjaman tidak valid untuk pengembalian');
+        if ($borrowing->status === 'dikembalikan') {
+            throw new BorrowingException('Item already returned', 422);
         }
 
-        $returnDate = $returnDate ? Carbon::parse($returnDate) : now();
-        $item = $borrowing->item;
+        return DB::transaction(function () use ($borrowing, $returnDate) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        // Increase available stock
-        $this->itemService->increaseStock($item, $borrowing->quantity);
+            if ($lockedBorrowing->status === 'dikembalikan') {
+                throw new BorrowingException('Item already returned', 422);
+            }
 
-        // Check if overdue
-        $status = 'dikembalikan';
-        if ($returnDate->isAfter($borrowing->due_date)) {
-            $status = 'terlambat';
-        }
+            if ($lockedBorrowing->status !== 'dipinjam' && $lockedBorrowing->status !== 'terlambat') {
+                throw new BorrowingException('Status peminjaman tidak valid untuk pengembalian', 422);
+            }
 
-        $borrowing->update([
-            'return_date' => $returnDate,
-            'status' => $status,
-        ]);
+            /** @var Item $item */
+            $item = Item::lockForUpdate()->findOrFail($lockedBorrowing->item_id);
 
-        return $borrowing->fresh();
+            $parsedReturnDate = $returnDate ? Carbon::parse($returnDate) : now();
+
+            $lockedBorrowing->return_date = $parsedReturnDate;
+            $lockedBorrowing->status = 'dikembalikan';
+            $lockedBorrowing->save();
+
+            // Increase available stock
+            $this->itemService->increaseStock($item, $lockedBorrowing->quantity);
+
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return $lockedBorrowing;
+        });
     }
 
     /**
-     * Cancel a pending borrowing
+     * Cancel a pending borrowing.
+     *
+     * @throws BorrowingException
      */
-    public function cancelBorrowing(Borrowing $borrowing): Borrowing
+    public function cancelBorrowing(Borrowing $borrowing): bool
     {
         if ($borrowing->status !== 'pending') {
-            throw new \Exception('Hanya peminjaman dengan status pending yang dapat dibatalkan');
+            throw new BorrowingException('Hanya peminjaman dengan status pending yang dapat dibatalkan', 422);
         }
 
-        $borrowing->delete();
-
-        return $borrowing;
+        return (bool) $borrowing->delete();
     }
 
     /**
-     * Extend borrowing due date
+     * Delete borrowing record.
+     *
+     * @throws BorrowingException
+     */
+    public function deleteBorrowing(Borrowing $borrowing): bool
+    {
+        if ($borrowing->status === 'dipinjam' || $borrowing->status === 'terlambat') {
+            throw new BorrowingException('Cannot delete active borrowing. Please return the item first.', 422);
+        }
+
+        return (bool) $borrowing->delete();
+    }
+
+    /**
+     * Extend borrowing due date.
+     *
+     * @throws BorrowingException
      */
     public function extendBorrowing(Borrowing $borrowing, string $newDueDate): Borrowing
     {
         if ($borrowing->status !== 'dipinjam') {
-            throw new \Exception('Hanya peminjaman aktif yang dapat diperpanjang');
+            throw new BorrowingException('Only active borrowings can be extended', 422);
         }
 
         $newDate = Carbon::parse($newDueDate);
-        
-        if ($newDate->isBefore($borrowing->due_date)) {
-            throw new \Exception('Tanggal perpanjangan harus setelah tanggal jatuh tempo saat ini');
+
+        if ($newDate->isBefore($borrowing->due_date) || $newDate->equalTo($borrowing->due_date)) {
+            throw new BorrowingException('Tanggal perpanjangan harus setelah tanggal jatuh tempo saat ini', 422);
         }
 
         $borrowing->update([
             'due_date' => $newDate,
         ]);
 
+        $borrowing->load(['user', 'item', 'approver']);
+
         return $borrowing->fresh();
     }
 
     /**
-     * Check and update overdue borrowings
+     * Check and update overdue borrowings atomically.
      */
-    public function checkOverdueBorrowings(): int
+    public function checkOverdueBorrowings(bool $dispatchNotifications = true): int
     {
-        $overdueBorrowings = Borrowing::where('status', 'dipinjam')
-            ->whereDate('due_date', '<', now())
-            ->get();
+        if ($dispatchNotifications) {
+            $overdueBorrowings = Borrowing::where('status', 'dipinjam')
+                ->where('due_date', '<', Carbon::today())
+                ->get();
 
-        foreach ($overdueBorrowings as $borrowing) {
-            $borrowing->update(['status' => 'terlambat']);
-            
-            // Dispatch overdue notification job
-            SendOverdueNotification::dispatch($borrowing);
+            $count = Borrowing::where('status', 'dipinjam')
+                ->where('due_date', '<', Carbon::today())
+                ->update(['status' => 'terlambat']);
+
+            foreach ($overdueBorrowings as $borrowing) {
+                try {
+                    SendOverdueNotification::dispatch($borrowing);
+                } catch (\Throwable $e) {
+                    logger()->warning('Failed to dispatch SendOverdueNotification: ' . $e->getMessage());
+                }
+            }
+
+            return $count;
         }
 
-        return $overdueBorrowings->count();
+        return Borrowing::where('status', 'dipinjam')
+            ->where('due_date', '<', Carbon::today())
+            ->update(['status' => 'terlambat']);
     }
 }

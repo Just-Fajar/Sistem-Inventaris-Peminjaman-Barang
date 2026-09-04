@@ -130,11 +130,7 @@ class ItemService
      */
     public function decreaseStock(Item $item, int $quantity): void
     {
-        if ($item->available_stock < $quantity) {
-            throw new \Exception('Stok tidak mencukupi');
-        }
-
-        $item->decrement('available_stock', $quantity);
+        $item->decreaseStock($quantity);
     }
 
     /**
@@ -142,7 +138,7 @@ class ItemService
      */
     public function increaseStock(Item $item, int $quantity): void
     {
-        $item->increment('available_stock', $quantity);
+        $item->increaseStock($quantity);
     }
     
     /**

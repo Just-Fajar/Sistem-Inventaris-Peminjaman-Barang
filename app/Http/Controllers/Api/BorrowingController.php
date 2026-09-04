@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\BorrowingException;
 use App\Http\Controllers\Controller;
 use App\Models\Borrowing;
-use App\Models\Item;
+use App\Services\BorrowingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BorrowingController extends Controller
 {
+    protected BorrowingService $borrowingService;
+
+    public function __construct(BorrowingService $borrowingService)
+    {
+        $this->borrowingService = $borrowingService;
+    }
+
     /**
      * Display a listing of borrowings
      */
@@ -85,10 +92,8 @@ class BorrowingController extends Controller
             $query->latest();
         }
 
-        // Batch update overdue status atomically without loading all records into memory (eliminating N+1 query)
-        Borrowing::where('status', 'dipinjam')
-            ->where('due_date', '<', Carbon::today())
-            ->update(['status' => 'terlambat']);
+        // Batch update overdue status atomically via service
+        $this->borrowingService->checkOverdueBorrowings(dispatchNotifications: false);
 
         $borrowings = $query->paginate($request->per_page ?? 15);
 
@@ -108,43 +113,18 @@ class BorrowingController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $result = DB::transaction(function () use ($validated, $request) {
-            $item = Item::lockForUpdate()->findOrFail($validated['item_id']);
+        try {
+            $borrowing = $this->borrowingService->createBorrowing($validated, $request->user()->id);
 
-            // Check if item is available
-            if (!$item->isAvailable($validated['quantity'])) {
-                return [
-                    'status' => 422,
-                    'payload' => [
-                        'message' => 'Item is not available in requested quantity',
-                        'available_stock' => $item->available_stock,
-                    ],
-                ];
-            }
-
-            // Generate unique code
-            $validated['borrow_code'] = Borrowing::generateCode();
-            $validated['user_id'] = $request->user()->id;
-            $validated['status'] = 'dipinjam';
-
-            // Create borrowing
-            $borrowing = Borrowing::create($validated);
-
-            // Update item stock
-            $item->decreaseStock($validated['quantity']);
-
-            $borrowing->load(['user', 'item', 'approver']);
-
-            return [
-                'status' => 201,
-                'payload' => [
-                    'message' => 'Borrowing created successfully',
-                    'data' => $borrowing,
-                ],
-            ];
-        });
-
-        return response()->json($result['payload'], $result['status']);
+            return response()->json([
+                'message' => 'Borrowing created successfully',
+                'data' => $borrowing,
+            ], 201);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
+        }
     }
 
     /**
@@ -165,42 +145,18 @@ class BorrowingController extends Controller
      */
     public function return(Request $request, Borrowing $borrowing)
     {
-        $result = DB::transaction(function () use ($borrowing) {
-            /** @var Borrowing $lockedBorrowing */
-            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
+        try {
+            $returned = $this->borrowingService->returnBorrowing($borrowing, $request->input('return_date'));
 
-            if ($lockedBorrowing->status === 'dikembalikan') {
-                return [
-                    'status' => 422,
-                    'payload' => [
-                        'message' => 'Item already returned',
-                    ],
-                ];
-            }
-
-            $success = $lockedBorrowing->processReturn();
-
-            if (!$success) {
-                return [
-                    'status' => 500,
-                    'payload' => [
-                        'message' => 'Failed to process return',
-                    ],
-                ];
-            }
-
-            $lockedBorrowing->load(['user', 'item', 'approver']);
-
-            return [
-                'status' => 200,
-                'payload' => [
-                    'message' => 'Item returned successfully',
-                    'data' => $lockedBorrowing,
-                ],
-            ];
-        });
-
-        return response()->json($result['payload'], $result['status']);
+            return response()->json([
+                'message' => 'Item returned successfully',
+                'data' => $returned,
+            ], 200);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
+        }
     }
 
     /**
@@ -214,69 +170,18 @@ class BorrowingController extends Controller
             ], 403);
         }
 
-        // Check if already approved or processed
-        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+        try {
+            $approved = $this->borrowingService->approveBorrowing($borrowing, $request->user()->id);
+
             return response()->json([
-                'message' => 'Peminjaman sudah diproses atau sudah disetujui.',
-            ], 400);
+                'message' => 'Borrowing approved successfully',
+                'data' => $approved,
+            ], 200);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        $result = DB::transaction(function () use ($request, $borrowing) {
-            /** @var Borrowing $lockedBorrowing */
-            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
-
-            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
-                return [
-                    'status' => 400,
-                    'payload' => [
-                        'message' => 'Peminjaman sudah diproses atau sudah disetujui.',
-                    ],
-                ];
-            }
-
-            /** @var Item $item */
-            $item = Item::lockForUpdate()->findOrFail($lockedBorrowing->item_id);
-
-            // If status is pending, deduct stock upon approval
-            if ($lockedBorrowing->status === 'pending') {
-                if (!$item->isAvailable($lockedBorrowing->quantity)) {
-                    return [
-                        'status' => 422,
-                        'payload' => [
-                            'message' => 'Stok barang tidak mencukupi untuk disetujui.',
-                            'available_stock' => $item->available_stock,
-                        ],
-                    ];
-                }
-
-                $item->decreaseStock($lockedBorrowing->quantity);
-            }
-
-            $lockedBorrowing->status = 'dipinjam';
-            $lockedBorrowing->approved_by = $request->user()->id;
-            $lockedBorrowing->approved_at = now();
-            $lockedBorrowing->save();
-
-            $lockedBorrowing->load(['user', 'item', 'approver']);
-
-            return [
-                'status' => 200,
-                'payload' => [
-                    'message' => 'Borrowing approved successfully',
-                    'data' => $lockedBorrowing,
-                ],
-            ];
-        });
-
-        if ($result['status'] === 200) {
-            try {
-                \App\Jobs\SendBorrowingNotification::dispatch($result['payload']['data'], 'approved');
-            } catch (\Throwable $e) {
-                logger()->warning('Failed to dispatch SendBorrowingNotification: ' . $e->getMessage());
-            }
-        }
-
-        return response()->json($result['payload'], $result['status']);
     }
 
     /**
@@ -290,41 +195,18 @@ class BorrowingController extends Controller
             ], 403);
         }
 
-        // Check if already processed
-        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+        try {
+            $rejected = $this->borrowingService->rejectBorrowing($borrowing);
+
             return response()->json([
-                'message' => 'Peminjaman sudah diproses.',
-            ], 400);
+                'message' => 'Borrowing rejected successfully',
+                'data' => $rejected,
+            ], 200);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        $result = DB::transaction(function () use ($borrowing) {
-            /** @var Borrowing $lockedBorrowing */
-            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
-
-            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
-                return [
-                    'status' => 400,
-                    'payload' => [
-                        'message' => 'Peminjaman sudah diproses.',
-                    ],
-                ];
-            }
-
-            $lockedBorrowing->status = 'rejected';
-            $lockedBorrowing->save();
-
-            $lockedBorrowing->load(['user', 'item', 'approver']);
-
-            return [
-                'status' => 200,
-                'payload' => [
-                    'message' => 'Borrowing rejected successfully',
-                    'data' => $lockedBorrowing,
-                ],
-            ];
-        });
-
-        return response()->json($result['payload'], $result['status']);
     }
 
     /**
@@ -357,18 +239,17 @@ class BorrowingController extends Controller
      */
     public function destroy(Borrowing $borrowing)
     {
-        // Only allow deletion if not yet borrowed or admin
-        if ($borrowing->status === 'dipinjam' || $borrowing->status === 'terlambat') {
+        try {
+            $this->borrowingService->deleteBorrowing($borrowing);
+
             return response()->json([
-                'message' => 'Cannot delete active borrowing. Please return the item first.',
-            ], 422);
+                'message' => 'Borrowing deleted successfully',
+            ]);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        $borrowing->delete();
-
-        return response()->json([
-            'message' => 'Borrowing deleted successfully',
-        ]);
     }
 
     /**
@@ -380,19 +261,18 @@ class BorrowingController extends Controller
             'new_due_date' => 'required|date|after:due_date',
         ]);
 
-        if ($borrowing->status !== 'dipinjam') {
+        try {
+            $extended = $this->borrowingService->extendBorrowing($borrowing, $validated['new_due_date']);
+
             return response()->json([
-                'message' => 'Only active borrowings can be extended',
-            ], 422);
+                'message' => 'Borrowing extended successfully',
+                'data' => $extended,
+            ]);
+        } catch (BorrowingException $e) {
+            return response()->json(array_merge([
+                'message' => $e->getMessage(),
+            ], $e->getExtraData()), $e->getStatusCode());
         }
-
-        $borrowing->update(['due_date' => $validated['new_due_date']]);
-        $borrowing->load(['user', 'item', 'approver']);
-
-        return response()->json([
-            'message' => 'Borrowing extended successfully',
-            'data' => $borrowing,
-        ]);
     }
 
     /**
@@ -413,4 +293,3 @@ class BorrowingController extends Controller
         return response()->json($borrowings);
     }
 }
-

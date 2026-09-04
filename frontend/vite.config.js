@@ -77,7 +77,7 @@ export default defineConfig({
     // Bundle analyzer - only in analyze mode
     visualizer({
       filename: './dist/stats.html',
-      open: true,
+      open: false,
       gzipSize: true,
       brotliSize: true,
     })
@@ -90,10 +90,15 @@ export default defineConfig({
     // Optimization settings
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('lucide-react')) {
+              return 'ui-vendor';
+            }
+          }
         }
       }
     },
