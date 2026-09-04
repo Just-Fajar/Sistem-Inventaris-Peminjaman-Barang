@@ -53,7 +53,8 @@ Route::prefix('v1')->group(function () {
         // Borrowings
         Route::apiResource('borrowings', BorrowingController::class);
         Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
-        Route::post('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
+        Route::match(['post', 'put'], '/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
+        Route::match(['post', 'put'], '/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject']);
         Route::post('/borrowings/{borrowing}/extend', [BorrowingController::class, 'extend']);
         Route::get('/borrowings/my/list', [BorrowingController::class, 'myBorrowings']);
 
@@ -115,7 +116,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::get('/items/search-suggestions', [ItemController::class, 'searchSuggestions']);
     Route::apiResource('borrowings', BorrowingController::class);
     Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
-    Route::post('/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
+    Route::match(['post', 'put'], '/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
+    Route::match(['post', 'put'], '/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject']);
     Route::post('/borrowings/{borrowing}/extend', [BorrowingController::class, 'extend']);
     Route::get('/borrowings/my/list', [BorrowingController::class, 'myBorrowings']);
     Route::prefix('reports')->group(function () {

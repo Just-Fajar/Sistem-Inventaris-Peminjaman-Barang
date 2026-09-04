@@ -214,15 +214,117 @@ class BorrowingController extends Controller
             ], 403);
         }
 
-        $borrowing->approved_by = $request->user()->id;
-        $borrowing->save();
+        // Check if already approved or processed
+        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            return response()->json([
+                'message' => 'Peminjaman sudah diproses atau sudah disetujui.',
+            ], 400);
+        }
 
-        $borrowing->load(['user', 'item', 'approver']);
+        $result = DB::transaction(function () use ($request, $borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        return response()->json([
-            'message' => 'Borrowing approved successfully',
-            'data' => $borrowing,
-        ]);
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+                return [
+                    'status' => 400,
+                    'payload' => [
+                        'message' => 'Peminjaman sudah diproses atau sudah disetujui.',
+                    ],
+                ];
+            }
+
+            /** @var Item $item */
+            $item = Item::lockForUpdate()->findOrFail($lockedBorrowing->item_id);
+
+            // If status is pending, deduct stock upon approval
+            if ($lockedBorrowing->status === 'pending') {
+                if (!$item->isAvailable($lockedBorrowing->quantity)) {
+                    return [
+                        'status' => 422,
+                        'payload' => [
+                            'message' => 'Stok barang tidak mencukupi untuk disetujui.',
+                            'available_stock' => $item->available_stock,
+                        ],
+                    ];
+                }
+
+                $item->decreaseStock($lockedBorrowing->quantity);
+            }
+
+            $lockedBorrowing->status = 'dipinjam';
+            $lockedBorrowing->approved_by = $request->user()->id;
+            $lockedBorrowing->approved_at = now();
+            $lockedBorrowing->save();
+
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return [
+                'status' => 200,
+                'payload' => [
+                    'message' => 'Borrowing approved successfully',
+                    'data' => $lockedBorrowing,
+                ],
+            ];
+        });
+
+        if ($result['status'] === 200) {
+            try {
+                \App\Jobs\SendBorrowingNotification::dispatch($result['payload']['data'], 'approved');
+            } catch (\Throwable $e) {
+                logger()->warning('Failed to dispatch SendBorrowingNotification: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json($result['payload'], $result['status']);
+    }
+
+    /**
+     * Reject borrowing (admin only)
+     */
+    public function reject(Request $request, Borrowing $borrowing)
+    {
+        if (!$request->user()->isAdmin()) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
+        }
+
+        // Check if already processed
+        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            return response()->json([
+                'message' => 'Peminjaman sudah diproses.',
+            ], 400);
+        }
+
+        $result = DB::transaction(function () use ($borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
+
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+                return [
+                    'status' => 400,
+                    'payload' => [
+                        'message' => 'Peminjaman sudah diproses.',
+                    ],
+                ];
+            }
+
+            $lockedBorrowing->status = 'rejected';
+            $lockedBorrowing->save();
+
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return [
+                'status' => 200,
+                'payload' => [
+                    'message' => 'Borrowing rejected successfully',
+                    'data' => $lockedBorrowing,
+                ],
+            ];
+        });
+
+        return response()->json($result['payload'], $result['status']);
     }
 
     /**
