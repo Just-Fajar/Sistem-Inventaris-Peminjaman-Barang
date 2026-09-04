@@ -11,6 +11,162 @@ use Carbon\Carbon;
 class ReportService
 {
     /**
+     * Get borrowing report with filters and statistics
+     */
+    public function getBorrowingReport(array $filters = []): array
+    {
+        $query = Borrowing::with(['user', 'item.category', 'approver']);
+
+        // Date range filter
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('borrow_date', '>=', $filters['start_date']);
+        }
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('borrow_date', '<=', $filters['end_date']);
+        }
+
+        // Status filter
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // User filter
+        if (!empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
+        // Item filter
+        if (!empty($filters['item_id'])) {
+            $query->where('item_id', $filters['item_id']);
+        }
+
+        $borrowings = $query->orderBy('borrow_date', 'desc')->get();
+
+        // Statistics
+        $statistics = [
+            'total_borrowings' => $borrowings->count(),
+            'active_borrowings' => $borrowings->where('status', 'dipinjam')->count(),
+            'returned_borrowings' => $borrowings->where('status', 'dikembalikan')->count(),
+            'overdue_borrowings' => $borrowings->where('status', 'terlambat')->count(),
+            'total_items_borrowed' => (int) $borrowings->sum('quantity'),
+            'total' => $borrowings->count(),
+            'active' => $borrowings->where('status', 'dipinjam')->count(),
+            'returned' => $borrowings->where('status', 'dikembalikan')->count(),
+            'overdue' => $borrowings->where('status', 'terlambat')->count(),
+        ];
+
+        return [
+            'data' => $borrowings,
+            'statistics' => $statistics,
+            'filters' => $filters,
+        ];
+    }
+
+    /**
+     * Get items report with counts and aggregated stock statistics
+     */
+    public function getItemReport(): array
+    {
+        $items = Item::with(['category', 'borrowings'])
+            ->withCount([
+                'borrowings',
+                'borrowings as active_borrowings_count' => function ($query) {
+                    $query->where('status', 'dipinjam');
+                },
+            ])
+            ->get();
+
+        $statistics = [
+            'total_items' => $items->count(),
+            'available_items' => $items->where('available_stock', '>', 0)->count(),
+            'out_of_stock' => $items->where('available_stock', 0)->count(),
+            'total_stock' => (int) $items->sum('stock'),
+            'available_stock' => (int) $items->sum('available_stock'),
+        ];
+
+        return [
+            'data' => $items,
+            'statistics' => $statistics,
+        ];
+    }
+
+    /**
+     * Get overdue borrowings report (with atomic batch status update)
+     */
+    public function getOverdueReport(): array
+    {
+        // 1. Batch update overdue borrowings in a single atomic query (eliminating N+1)
+        Borrowing::where('status', 'dipinjam')
+            ->where('due_date', '<', Carbon::today())
+            ->update(['status' => 'terlambat']);
+
+        // 2. Fetch all overdue borrowings with relations in a single eager loaded query
+        $overdueBorrowings = Borrowing::with(['user', 'item', 'approver'])
+            ->where('status', 'terlambat')
+            ->orWhere(function ($query) {
+                $query->where('status', 'dipinjam')
+                      ->where('due_date', '<', Carbon::today());
+            })
+            ->orderBy('due_date', 'asc')
+            ->get();
+
+        return [
+            'data' => $overdueBorrowings,
+            'total' => $overdueBorrowings->count(),
+        ];
+    }
+
+    /**
+     * Get monthly borrowings summary and daily breakdown
+     */
+    public function getMonthlyReport(int $year, int $month): array
+    {
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+
+        $borrowings = Borrowing::with(['user', 'item'])
+            ->whereBetween('borrow_date', [$startDate, $endDate])
+            ->get();
+
+        $statistics = [
+            'total_borrowings' => $borrowings->count(),
+            'active_borrowings' => $borrowings->where('status', 'dipinjam')->count(),
+            'returned_borrowings' => $borrowings->where('status', 'dikembalikan')->count(),
+            'overdue_borrowings' => $borrowings->where('status', 'terlambat')->count(),
+            'total_items_borrowed' => (int) $borrowings->sum('quantity'),
+        ];
+
+        // Daily breakdown
+        $dailyBreakdown = [];
+        for ($day = 1; $day <= $endDate->day; $day++) {
+            $date = Carbon::create($year, $month, $day);
+            $dailyBorrowings = $borrowings->filter(function ($borrowing) use ($date) {
+                /** @var \Carbon\Carbon $borrowDate */
+                $borrowDate = $borrowing->borrow_date;
+                return $borrowDate->format('Y-m-d') === $date->format('Y-m-d');
+            });
+
+            $dailyBreakdown[] = [
+                'date' => $date->format('Y-m-d'),
+                'count' => $dailyBorrowings->count(),
+                'quantity' => (int) $dailyBorrowings->sum('quantity'),
+            ];
+        }
+
+        return [
+            'period' => [
+                'year' => $year,
+                'month' => $month,
+                'start_date' => $startDate->format('Y-m-d'),
+                'end_date' => $endDate->format('Y-m-d'),
+            ],
+            'statistics' => $statistics,
+            'daily_breakdown' => $dailyBreakdown,
+            'borrowings' => $borrowings,
+        ];
+    }
+
+    /**
      * Get borrowing statistics
      */
     public function getBorrowingStats(?string $startDate = null, ?string $endDate = null): array
