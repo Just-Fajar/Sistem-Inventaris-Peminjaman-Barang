@@ -24,8 +24,7 @@ class AuthController extends Controller
      *             @OA\Property(property="name", type="string", example="John Doe"),
      *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
      *             @OA\Property(property="password", type="string", format="password", example="Password123!"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", example="Password123!"),
-     *             @OA\Property(property="role", type="string", enum={"admin", "staff"}, example="staff")
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="Password123!")
      *         )
      *     ),
      *     @OA\Response(
@@ -46,14 +45,13 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'string', 'confirmed', new StrongPassword()],
-            'role' => 'sometimes|in:admin,staff',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'staff',
+            'role' => 'staff',
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;

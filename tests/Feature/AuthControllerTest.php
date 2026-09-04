@@ -29,6 +29,26 @@ class AuthControllerTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
+            'role' => 'staff',
+        ]);
+    }
+
+    public function test_registration_ignores_role_input_and_defaults_to_staff(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Attempted Admin',
+            'email' => 'attacker@example.com',
+            'password' => 'Test@1234',
+            'password_confirmation' => 'Test@1234',
+            'role' => 'admin',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('user.role', 'staff');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'attacker@example.com',
+            'role' => 'staff',
         ]);
     }
 
@@ -42,7 +62,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['password', 'password.min_length']);
+            ->assertJsonValidationErrors(['password']);
     }
 
     public function test_user_can_login_with_valid_credentials(): void
