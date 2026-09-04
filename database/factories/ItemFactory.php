@@ -30,7 +30,7 @@ class ItemFactory extends Factory
             'category_id' => Category::factory(),
             'stock' => $stock,
             'available_stock' => $stock,
-            'condition' => $this->faker->randomElement(['good', 'fair', 'poor']),
+            'condition' => $this->faker->randomElement(['baik', 'rusak', 'hilang']),
             'description' => $this->faker->optional()->sentence(),
             'image' => $this->faker->optional()->imageUrl(640, 480, 'technics'),
         ];

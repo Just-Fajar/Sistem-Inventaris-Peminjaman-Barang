@@ -93,6 +93,18 @@ class UserController extends Controller
             ], 400);
         }
 
+        // Prevent deleting user with active borrowings
+        $hasActiveBorrowings = $user->borrowings()
+            ->whereIn('status', ['dipinjam', 'terlambat'])
+            ->exists();
+
+        if ($hasActiveBorrowings) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus user yang masih memiliki peminjaman aktif'
+            ], 400);
+        }
+
         $user->delete();
 
         return response()->json([
