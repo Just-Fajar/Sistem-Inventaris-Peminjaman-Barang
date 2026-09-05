@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\BorrowingStatus;
 use App\Exceptions\BorrowingException;
 use App\Jobs\SendBorrowingNotification;
 use App\Jobs\SendOverdueNotification;
@@ -17,6 +18,18 @@ class BorrowingService
     public function __construct(ItemService $itemService)
     {
         $this->itemService = $itemService;
+    }
+
+    /**
+     * Get string status value from model or string.
+     */
+    private function getStatusValue(Borrowing $borrowing): string
+    {
+        if ($borrowing->status instanceof BorrowingStatus) {
+            return $borrowing->status->value;
+        }
+
+        return (string) $borrowing->status;
     }
 
     /**
@@ -80,7 +93,8 @@ class BorrowingService
     public function approveBorrowing(Borrowing $borrowing, int $approverId): Borrowing
     {
         // Initial guard
-        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+        $status = $this->getStatusValue($borrowing);
+        if ($borrowing->approved_by !== null || in_array($status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
             throw new BorrowingException('Peminjaman sudah diproses atau sudah disetujui.', 400);
         }
 
@@ -88,7 +102,8 @@ class BorrowingService
             /** @var Borrowing $lockedBorrowing */
             $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            $lockedStatus = $this->getStatusValue($lockedBorrowing);
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedStatus, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
                 throw new BorrowingException('Peminjaman sudah diproses atau sudah disetujui.', 400);
             }
 
@@ -96,7 +111,7 @@ class BorrowingService
             $item = Item::lockForUpdate()->findOrFail($lockedBorrowing->item_id);
 
             // If status is pending, deduct stock upon approval
-            if ($lockedBorrowing->status === 'pending') {
+            if ($lockedStatus === 'pending') {
                 if (!$item->isAvailable($lockedBorrowing->quantity)) {
                     throw new BorrowingException(
                         'Stok barang tidak mencukupi untuk disetujui.',
@@ -108,7 +123,7 @@ class BorrowingService
                 $this->itemService->decreaseStock($item, $lockedBorrowing->quantity);
             }
 
-            $lockedBorrowing->status = 'dipinjam';
+            $lockedBorrowing->status = BorrowingStatus::Dipinjam;
             $lockedBorrowing->approved_by = $approverId;
             $lockedBorrowing->approved_at = now();
             $lockedBorrowing->save();
@@ -135,7 +150,8 @@ class BorrowingService
      */
     public function rejectBorrowing(Borrowing $borrowing): Borrowing
     {
-        if ($borrowing->approved_by !== null || in_array($borrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+        $status = $this->getStatusValue($borrowing);
+        if ($borrowing->approved_by !== null || in_array($status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
             throw new BorrowingException('Peminjaman sudah diproses.', 400);
         }
 
@@ -143,11 +159,12 @@ class BorrowingService
             /** @var Borrowing $lockedBorrowing */
             $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-            if ($lockedBorrowing->approved_by !== null || in_array($lockedBorrowing->status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
+            $lockedStatus = $this->getStatusValue($lockedBorrowing);
+            if ($lockedBorrowing->approved_by !== null || in_array($lockedStatus, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
                 throw new BorrowingException('Peminjaman sudah diproses.', 400);
             }
 
-            $lockedBorrowing->status = 'rejected';
+            $lockedBorrowing->status = BorrowingStatus::Rejected;
             $lockedBorrowing->save();
 
             $lockedBorrowing->load(['user', 'item', 'approver']);
@@ -163,7 +180,8 @@ class BorrowingService
      */
     public function returnBorrowing(Borrowing $borrowing, ?string $returnDate = null): Borrowing
     {
-        if ($borrowing->status === 'dikembalikan') {
+        $status = $this->getStatusValue($borrowing);
+        if ($status === 'dikembalikan') {
             throw new BorrowingException('Item already returned', 422);
         }
 
@@ -171,11 +189,12 @@ class BorrowingService
             /** @var Borrowing $lockedBorrowing */
             $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-            if ($lockedBorrowing->status === 'dikembalikan') {
+            $lockedStatus = $this->getStatusValue($lockedBorrowing);
+            if ($lockedStatus === 'dikembalikan') {
                 throw new BorrowingException('Item already returned', 422);
             }
 
-            if ($lockedBorrowing->status !== 'dipinjam' && $lockedBorrowing->status !== 'terlambat') {
+            if ($lockedStatus !== 'dipinjam' && $lockedStatus !== 'terlambat') {
                 throw new BorrowingException('Status peminjaman tidak valid untuk pengembalian', 422);
             }
 
@@ -185,7 +204,7 @@ class BorrowingService
             $parsedReturnDate = $returnDate ? Carbon::parse($returnDate) : now();
 
             $lockedBorrowing->return_date = $parsedReturnDate;
-            $lockedBorrowing->status = 'dikembalikan';
+            $lockedBorrowing->status = BorrowingStatus::Dikembalikan;
             $lockedBorrowing->save();
 
             // Increase available stock
@@ -204,7 +223,8 @@ class BorrowingService
      */
     public function cancelBorrowing(Borrowing $borrowing): bool
     {
-        if ($borrowing->status !== 'pending') {
+        $status = $this->getStatusValue($borrowing);
+        if ($status !== 'pending') {
             throw new BorrowingException('Hanya peminjaman dengan status pending yang dapat dibatalkan', 422);
         }
 
@@ -218,7 +238,8 @@ class BorrowingService
      */
     public function deleteBorrowing(Borrowing $borrowing): bool
     {
-        if ($borrowing->status === 'dipinjam' || $borrowing->status === 'terlambat') {
+        $status = $this->getStatusValue($borrowing);
+        if ($status === 'dipinjam' || $status === 'terlambat') {
             throw new BorrowingException('Cannot delete active borrowing. Please return the item first.', 422);
         }
 
@@ -232,7 +253,8 @@ class BorrowingService
      */
     public function extendBorrowing(Borrowing $borrowing, string $newDueDate): Borrowing
     {
-        if ($borrowing->status !== 'dipinjam') {
+        $status = $this->getStatusValue($borrowing);
+        if ($status !== 'dipinjam') {
             throw new BorrowingException('Only active borrowings can be extended', 422);
         }
 

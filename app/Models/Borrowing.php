@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use App\Enums\BorrowingStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -43,6 +44,7 @@ class Borrowing extends Model
         'return_date' => 'datetime',
         'approved_at' => 'datetime',
         'quantity' => 'integer',
+        'status' => BorrowingStatus::class,
     ];
 
     /**
@@ -91,7 +93,8 @@ class Borrowing extends Model
      */
     public function isOverdue(): bool
     {
-        if ($this->status === 'dikembalikan') {
+        $statusValue = $this->status instanceof BorrowingStatus ? $this->status->value : (string) $this->status;
+        if ($statusValue === BorrowingStatus::Dikembalikan->value) {
             return false;
         }
 
@@ -103,8 +106,9 @@ class Borrowing extends Model
      */
     public function updateOverdueStatus(): void
     {
-        if ($this->isOverdue() && $this->status === 'dipinjam') {
-            $this->status = 'terlambat';
+        $statusValue = $this->status instanceof BorrowingStatus ? $this->status->value : (string) $this->status;
+        if ($this->isOverdue() && $statusValue === BorrowingStatus::Dipinjam->value) {
+            $this->status = BorrowingStatus::Terlambat;
             $this->save();
         }
     }
@@ -127,21 +131,23 @@ class Borrowing extends Model
      */
     public function processReturn(): bool
     {
-        if ($this->status === 'dikembalikan') {
+        $statusValue = $this->status instanceof BorrowingStatus ? $this->status->value : (string) $this->status;
+        if ($statusValue === BorrowingStatus::Dikembalikan->value) {
             return false;
         }
 
         return DB::transaction(function () {
             // Re-check after acquiring transaction to prevent race conditions
             $this->refresh();
-            if ($this->status === 'dikembalikan') {
+            $statusValue = $this->status instanceof BorrowingStatus ? $this->status->value : (string) $this->status;
+            if ($statusValue === BorrowingStatus::Dikembalikan->value) {
                 return false;
             }
 
             $item = Item::lockForUpdate()->find($this->item_id);
 
             $this->return_date = now();
-            $this->status = 'dikembalikan';
+            $this->status = BorrowingStatus::Dikembalikan;
             $this->save();
 
             // Update item stock
@@ -158,7 +164,7 @@ class Borrowing extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'dipinjam');
+        return $query->where('status', BorrowingStatus::Dipinjam->value);
     }
 
     /**
@@ -166,7 +172,7 @@ class Borrowing extends Model
      */
     public function scopeOverdue($query)
     {
-        return $query->where('status', 'terlambat');
+        return $query->where('status', BorrowingStatus::Terlambat->value);
     }
 
     /**
@@ -174,7 +180,7 @@ class Borrowing extends Model
      */
     public function scopeReturned($query)
     {
-        return $query->where('status', 'dikembalikan');
+        return $query->where('status', BorrowingStatus::Dikembalikan->value);
     }
 
     /**

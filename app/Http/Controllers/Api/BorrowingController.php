@@ -212,7 +212,8 @@ class BorrowingController extends Controller
      */
     public function update(UpdateBorrowingRequest $request, Borrowing $borrowing)
     {
-        if ($borrowing->status === 'dikembalikan') {
+        $statusValue = $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->value : (string) $borrowing->status;
+        if ($statusValue === \App\Enums\BorrowingStatus::Dikembalikan->value) {
             return response()->json([
                 'message' => 'Cannot update returned borrowing',
             ], 422);
