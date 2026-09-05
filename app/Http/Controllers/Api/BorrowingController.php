@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\BorrowingStatus;
 use App\Exceptions\BorrowingException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBorrowingRequest;
@@ -127,8 +128,14 @@ class BorrowingController extends Controller
     /**
      * Display the specified borrowing
      */
-    public function show(Borrowing $borrowing)
+    public function show(Request $request, Borrowing $borrowing)
     {
+        if ($request->user() && $request->user()->cannot('view', $borrowing)) {
+            return response()->json([
+                'message' => 'Unauthorized. You can only view your own borrowings.',
+            ], 403);
+        }
+
         $borrowing->load(['user', 'item.category', 'approver']);
         $borrowing->updateOverdueStatus();
 
@@ -140,6 +147,12 @@ class BorrowingController extends Controller
      */
     public function return(Request $request, Borrowing $borrowing)
     {
+        if ($request->user() && $request->user()->cannot('return', $borrowing)) {
+            return response()->json([
+                'message' => 'Unauthorized. You can only return your own borrowings.',
+            ], 403);
+        }
+
         try {
             $returned = $this->borrowingService->returnBorrowing($borrowing, $request->input('return_date'));
             $returned->load(['user', 'item.category', 'approver']);
@@ -160,7 +173,7 @@ class BorrowingController extends Controller
      */
     public function approve(Request $request, Borrowing $borrowing)
     {
-        if (!$request->user()->isAdmin()) {
+        if ($request->user()->cannot('approve', $borrowing)) {
             return response()->json([
                 'message' => 'Unauthorized. Admin access required.',
             ], 403);
@@ -186,7 +199,7 @@ class BorrowingController extends Controller
      */
     public function reject(Request $request, Borrowing $borrowing)
     {
-        if (!$request->user()->isAdmin()) {
+        if ($request->user()->cannot('reject', $borrowing)) {
             return response()->json([
                 'message' => 'Unauthorized. Admin access required.',
             ], 403);
@@ -212,6 +225,12 @@ class BorrowingController extends Controller
      */
     public function update(UpdateBorrowingRequest $request, Borrowing $borrowing)
     {
+        if ($request->user() && $request->user()->cannot('update', $borrowing)) {
+            return response()->json([
+                'message' => 'Unauthorized. You cannot update this borrowing.',
+            ], 403);
+        }
+
         $statusValue = $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->value : (string) $borrowing->status;
         if ($statusValue === \App\Enums\BorrowingStatus::Dikembalikan->value) {
             return response()->json([
@@ -231,8 +250,14 @@ class BorrowingController extends Controller
     /**
      * Remove the specified borrowing
      */
-    public function destroy(Borrowing $borrowing)
+    public function destroy(Request $request, Borrowing $borrowing)
     {
+        if ($request->user() && $request->user()->cannot('delete', $borrowing)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required to delete borrowings.',
+            ], 403);
+        }
+
         try {
             $this->borrowingService->deleteBorrowing($borrowing);
 
@@ -251,6 +276,12 @@ class BorrowingController extends Controller
      */
     public function extend(Request $request, Borrowing $borrowing)
     {
+        if ($request->user() && $request->user()->cannot('extend', $borrowing)) {
+            return response()->json([
+                'message' => 'Unauthorized. You can only extend your own borrowings.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'new_due_date' => 'required|date|after:due_date',
         ]);
