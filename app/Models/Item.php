@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ItemCondition;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -36,6 +37,7 @@ class Item extends Model
     protected $casts = [
         'stock' => 'integer',
         'available_stock' => 'integer',
+        'condition' => ItemCondition::class,
     ];
 
     /**
@@ -67,7 +69,32 @@ class Item extends Model
      */
     public function isAvailable($quantity = 1): bool
     {
-        return $this->available_stock >= $quantity && $this->condition === 'baik';
+        $conditionValue = $this->condition instanceof ItemCondition ? $this->condition->value : (string) $this->condition;
+        return $this->available_stock >= $quantity && $conditionValue === ItemCondition::Baik->value;
+    }
+
+    /**
+     * Scope items in good condition.
+     */
+    public function scopeGood($query)
+    {
+        return $query->where('condition', ItemCondition::Baik->value);
+    }
+
+    /**
+     * Scope items in damaged condition.
+     */
+    public function scopeDamaged($query)
+    {
+        return $query->where('condition', ItemCondition::Rusak->value);
+    }
+
+    /**
+     * Scope items in lost condition.
+     */
+    public function scopeLost($query)
+    {
+        return $query->where('condition', ItemCondition::Hilang->value);
     }
 
     /**

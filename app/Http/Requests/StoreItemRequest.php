@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ItemCondition;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreItemRequest extends FormRequest
 {
@@ -26,7 +28,7 @@ class StoreItemRequest extends FormRequest
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string|max:1000',
             'stock' => 'required|integer|min:0|max:999999',
-            'condition' => 'required|in:baik,rusak,hilang',
+            'condition' => ['required', Rule::enum(ItemCondition::class)],
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
     }
@@ -48,6 +50,8 @@ class StoreItemRequest extends FormRequest
             'stock.min' => 'Stok minimal 0',
             'condition.required' => 'Kondisi barang wajib dipilih',
             'condition.in' => 'Kondisi barang tidak valid',
+            'condition.Illuminate\Validation\Rules\Enum' => 'Kondisi barang tidak valid',
+            'condition.enum' => 'Kondisi barang tidak valid',
             'image.image' => 'File harus berupa gambar',
             'image.mimes' => 'Format gambar harus jpeg, png, atau jpg',
             'image.max' => 'Ukuran gambar maksimal 2MB',
