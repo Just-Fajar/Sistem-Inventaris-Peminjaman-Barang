@@ -22,7 +22,7 @@ class ItemResource extends JsonResource
             'category_id' => $this->category_id,
             'stock' => (int) $this->stock,
             'available_stock' => (int) $this->available_stock,
-            'condition' => $this->condition,
+            'condition' => $this->condition instanceof \App\Enums\ItemCondition ? $this->condition->value : (string) $this->condition,
             'image' => $this->image,
             'image_url' => $this->image ? asset('storage/' . $this->image) : null,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
