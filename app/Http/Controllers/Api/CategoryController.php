@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -14,28 +15,34 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        // Cache categories untuk 1 jam (3600 detik)
-        $cacheKey = 'categories_' . ($request->has('all') ? 'all' : 'paginated_' . ($request->per_page ?? 15));
+        $isAll = $request->has('all');
+        $perPage = $request->per_page ?? 15;
+        $cacheKey = 'categories_' . ($isAll ? 'all' : 'paginated_' . $perPage);
         
+        $fetchCategories = function () use ($request, $isAll, $perPage) {
+            $query = Category::withCount('items');
+            
+            if ($request->has('search')) {
+                $query->where('name', 'like', "%{$request->search}%");
+            }
+            
+            return $isAll 
+                ? $query->get() 
+                : $query->paginate($perPage);
+        };
+
         if ($request->has('search')) {
             // Jangan cache hasil search
-            $query = Category::withCount('items');
-            $query->where('name', 'like', "%{$request->search}%");
-            
-            $categories = $request->has('all') 
-                ? $query->get() 
-                : $query->paginate($request->per_page ?? 15);
-                
-            return response()->json($categories);
+            $categories = $fetchCategories();
+        } else {
+            $categories = Cache::remember($cacheKey, 3600, $fetchCategories);
         }
-        
-        $categories = Cache::remember($cacheKey, 3600, function () use ($request) {
-            $query = Category::withCount('items');
-            
-            return $request->has('all') 
-                ? $query->get() 
-                : $query->paginate($request->per_page ?? 15);
-        });
+
+        if ($isAll) {
+            return CategoryResource::collection($categories);
+        }
+
+        $categories->through(fn ($category) => new CategoryResource($category));
 
         return response()->json($categories);
     }
@@ -56,10 +63,10 @@ class CategoryController extends Controller
         Cache::forget('categories_all');
         Cache::forget('categories_paginated_15');
 
-        return response()->json([
-            'message' => 'Category created successfully',
-            'data' => $category,
-        ], 201);
+        return (new CategoryResource($category))
+            ->additional(['message' => 'Category created successfully'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -69,9 +76,7 @@ class CategoryController extends Controller
     {
         $category->load('items');
 
-        return response()->json([
-            'data' => $category,
-        ]);
+        return new CategoryResource($category);
     }
 
     /**
@@ -97,10 +102,10 @@ class CategoryController extends Controller
         Cache::forget('categories_all');
         Cache::forget('categories_paginated_15');
 
-        return response()->json([
-            'message' => 'Category updated successfully',
-            'data' => $category,
-        ]);
+        return (new CategoryResource($category))
+            ->additional(['message' => 'Category updated successfully'])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
