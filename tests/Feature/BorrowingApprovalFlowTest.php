@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BorrowingStatus;
 use App\Jobs\SendBorrowingNotification;
 use App\Models\Borrowing;
 use App\Models\Category;
@@ -211,7 +212,7 @@ class BorrowingApprovalFlowTest extends TestCase
             ]);
 
         // State integrity: borrowing remains pending and stock untouched
-        $this->assertEquals('pending', $borrowing->fresh()->status);
+        $this->assertEquals(BorrowingStatus::Pending, $borrowing->fresh()->status);
         $this->assertNull($borrowing->fresh()->approved_by);
         $this->assertEquals(1, $this->item->fresh()->available_stock);
     }
