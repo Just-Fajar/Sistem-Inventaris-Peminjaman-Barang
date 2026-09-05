@@ -49,7 +49,7 @@ class ItemControllerTest extends TestCase
                 'name' => 'Test Item',
                 'category_id' => $category->id,
                 'stock' => 10,
-                'condition' => 'good',
+                'condition' => 'baik',
                 'description' => 'Test description',
             ]);
 
@@ -69,7 +69,7 @@ class ItemControllerTest extends TestCase
                 'name' => 'Test Item',
                 'category_id' => $category->id,
                 'stock' => 10,
-                'condition' => 'good',
+                'condition' => 'baik',
             ]);
 
         $response->assertStatus(403);
@@ -84,7 +84,7 @@ class ItemControllerTest extends TestCase
                 'name' => 'Updated Item',
                 'category_id' => $item->category_id,
                 'stock' => 15,
-                'condition' => 'good',
+                'condition' => 'baik',
             ]);
 
         $response->assertStatus(200);
@@ -103,7 +103,7 @@ class ItemControllerTest extends TestCase
             ->deleteJson("/api/items/{$item->id}");
 
         $response->assertStatus(200);
-        $this->assertDatabaseMissing('items', ['id' => $item->id]);
+        $this->assertSoftDeleted('items', ['id' => $item->id]);
     }
 
     public function test_can_search_items_by_name(): void
@@ -170,7 +170,7 @@ class ItemControllerTest extends TestCase
                 'name' => 'Test Item',
                 'category_id' => $category->id,
                 'stock' => 10,
-                'condition' => 'good',
+                'condition' => 'baik',
                 'image' => $file,
             ]);
 
@@ -189,7 +189,7 @@ class ItemControllerTest extends TestCase
                 'name' => 'Test Item',
                 'category_id' => $category->id,
                 'stock' => 20,
-                'condition' => 'good',
+                'condition' => 'baik',
             ]);
 
         $response->assertStatus(201);

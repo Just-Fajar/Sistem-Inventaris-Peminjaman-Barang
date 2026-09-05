@@ -6,6 +6,7 @@ use App\Exceptions\ItemException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreItemRequest;
 use App\Http\Requests\UpdateItemRequest;
+use App\Http\Resources\ItemResource;
 use App\Models\Item;
 use App\Services\ItemService;
 use Illuminate\Http\Request;
@@ -58,11 +59,11 @@ class ItemController extends Controller
         }
 
         // Filter by stock range
-        if ($request->has('stock_min')) {
-            $query->where('stock', '>=', $request->stock_min);
+        if ($request->has('stock_min') || $request->has('min_stock')) {
+            $query->where('stock', '>=', $request->input('stock_min', $request->input('min_stock')));
         }
-        if ($request->has('stock_max')) {
-            $query->where('stock', '<=', $request->stock_max);
+        if ($request->has('stock_max') || $request->has('max_stock')) {
+            $query->where('stock', '<=', $request->input('stock_max', $request->input('max_stock')));
         }
 
         // Filter by availability
@@ -92,6 +93,7 @@ class ItemController extends Controller
         }
 
         $items = $query->paginate($request->per_page ?? 15);
+        $items->through(fn ($item) => new ItemResource($item));
 
         return response()->json($items);
     }
@@ -108,11 +110,12 @@ class ItemController extends Controller
         }
 
         $item = $this->itemService->createItem($validated);
+        $item->load('category');
 
-        return response()->json([
-            'message' => 'Item created successfully',
-            'data' => $item,
-        ], 201);
+        return (new ItemResource($item))
+            ->additional(['message' => 'Item created successfully'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -122,9 +125,7 @@ class ItemController extends Controller
     {
         $item->load(['category', 'activeBorrowings.user']);
 
-        return response()->json([
-            'data' => $item,
-        ]);
+        return new ItemResource($item);
     }
 
     /**
@@ -139,11 +140,12 @@ class ItemController extends Controller
         }
 
         $updatedItem = $this->itemService->updateItem($item, $validated);
+        $updatedItem->load('category');
 
-        return response()->json([
-            'message' => 'Item updated successfully',
-            'data' => $updatedItem,
-        ]);
+        return (new ItemResource($updatedItem))
+            ->additional(['message' => 'Item updated successfully'])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**

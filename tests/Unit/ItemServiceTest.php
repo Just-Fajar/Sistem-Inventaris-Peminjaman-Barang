@@ -42,7 +42,7 @@ class ItemServiceTest extends TestCase
             'name' => 'Test Item',
             'category_id' => $category->id,
             'stock' => 10,
-            'condition' => 'good',
+            'condition' => 'baik',
             'image' => $file,
         ];
 
@@ -60,7 +60,7 @@ class ItemServiceTest extends TestCase
             'name' => 'Test Item',
             'category_id' => $category->id,
             'stock' => 25,
-            'condition' => 'good',
+            'condition' => 'baik',
         ];
 
         $item = $this->itemService->createItem($data);
@@ -80,7 +80,7 @@ class ItemServiceTest extends TestCase
             'name' => 'Updated Item',
             'category_id' => $item->category_id,
             'stock' => 15,
-            'condition' => 'good',
+            'condition' => 'baik',
             'image' => $newFile,
         ];
 
@@ -126,7 +126,7 @@ class ItemServiceTest extends TestCase
         $this->itemService->deleteItem($item);
 
         $this->assertFalse(Storage::disk('public')->exists('items/test.jpg'));
-        $this->assertDatabaseMissing('items', ['id' => $item->id]);
+        $this->assertSoftDeleted('items', ['id' => $item->id]);
     }
 
     public function test_image_is_optimized_during_upload(): void
@@ -141,7 +141,7 @@ class ItemServiceTest extends TestCase
             'name' => 'Test Item',
             'category_id' => $category->id,
             'stock' => 10,
-            'condition' => 'good',
+            'condition' => 'baik',
             'image' => $file,
         ];
 
