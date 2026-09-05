@@ -151,8 +151,14 @@ class ItemController extends Controller
     /**
      * Remove the specified item
      */
-    public function destroy(Item $item)
+    public function destroy(Request $request, Item $item)
     {
+        if ($request->user() && $request->user()->cannot('delete', $item)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
+        }
+
         try {
             $this->itemService->deleteItem($item);
 
@@ -171,6 +177,12 @@ class ItemController extends Controller
      */
     public function bulkDelete(Request $request)
     {
+        if ($request->user() && $request->user()->cannot('bulkDelete', Item::class)) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'exists:items,id',
