@@ -339,7 +339,7 @@ class ReportService
                     'borrow_date' => $borrowDate->format('Y-m-d'),
                     'due_date' => $dueDate->format('Y-m-d'),
                     'return_date' => $borrowing->return_date?->format('Y-m-d'),
-                    'status' => $borrowing->status,
+                    'status' => $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->value : $borrowing->status,
                 ];
             })
             ->toArray();

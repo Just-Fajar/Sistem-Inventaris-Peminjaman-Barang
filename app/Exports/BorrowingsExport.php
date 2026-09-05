@@ -73,7 +73,7 @@ class BorrowingsExport implements FromCollection, WithHeadings, WithMapping, Wit
             $borrowing->borrow_date->format('d/m/Y'),
             $borrowing->due_date->format('d/m/Y'),
             $borrowing->return_date ? $borrowing->return_date->format('d/m/Y') : '-',
-            ucfirst($borrowing->status),
+            $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->label() : ucfirst((string) $borrowing->status),
             $borrowing->approver ? $borrowing->approver->name : '-',
             $borrowing->notes ?? '-',
         ];

@@ -14,8 +14,9 @@ class BorrowingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $isOverdue = ($this->status === 'terlambat') || 
-            ($this->status === 'dipinjam' && $this->due_date && $this->due_date->isPast());
+        $statusValue = $this->status instanceof \App\Enums\BorrowingStatus ? $this->status->value : (string) $this->status;
+        $isOverdue = ($statusValue === 'terlambat') || 
+            ($statusValue === 'dipinjam' && $this->due_date && $this->due_date->isPast());
 
         $daysOverdue = ($isOverdue && $this->due_date) ? abs((int) now()->diffInDays($this->due_date)) : 0;
 
@@ -29,7 +30,7 @@ class BorrowingResource extends JsonResource
             'borrow_date' => $this->borrow_date?->format('Y-m-d'),
             'due_date' => $this->due_date?->format('Y-m-d'),
             'return_date' => $this->return_date?->format('Y-m-d'),
-            'status' => $this->status,
+            'status' => $statusValue,
             'notes' => $this->notes,
             'approved_by' => $this->approved_by,
             'approved_at' => $this->approved_at?->format('Y-m-d H:i:s'),
