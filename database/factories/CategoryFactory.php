@@ -17,7 +17,7 @@ class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->unique()->randomElement([
+            'name' => $this->faker->randomElement([
                 'Electronics',
                 'Furniture',
                 'Office Supplies',
@@ -26,7 +26,7 @@ class CategoryFactory extends Factory
                 'Networking',
                 'Peripherals',
                 'Mobile Devices',
-            ]),
+            ]) . ' ' . $this->faker->unique()->numerify('####'),
             'description' => $this->faker->optional()->sentence(),
         ];
     }

@@ -23,7 +23,7 @@ class CategoryResource extends JsonResource
             
             // Conditional relationships
             'items' => ItemResource::collection($this->whenLoaded('items')),
-            'items_count' => $this->when(isset($this->items_count), $this->items_count),
+            'items_count' => $this->when(isset($this->items_count), (int) $this->items_count),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class UserController extends Controller
         
         return response()->json([
             'success' => true,
-            'data' => $users
+            'data' => UserResource::collection($users),
         ]);
     }
 
@@ -34,19 +35,23 @@ class UserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
         $user = User::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User berhasil ditambahkan',
-            'data' => $user
-        ], 201);
+        return (new UserResource($user))
+            ->additional([
+                'success' => true,
+                'message' => 'User berhasil ditambahkan',
+            ])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(User $user)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $user->load('borrowings')
-        ]);
+        $user->load('borrowings');
+
+        return (new UserResource($user))
+            ->additional([
+                'success' => true,
+            ]);
     }
 
     public function update(Request $request, User $user)
@@ -71,11 +76,13 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User berhasil diperbarui',
-            'data' => $user
-        ]);
+        return (new UserResource($user))
+            ->additional([
+                'success' => true,
+                'message' => 'User berhasil diperbarui',
+            ])
+            ->response()
+            ->setStatusCode(200);
     }
 
     public function destroy(User $user)
