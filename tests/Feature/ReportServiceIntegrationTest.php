@@ -138,7 +138,8 @@ class ReportServiceIntegrationTest extends TestCase
         // Filter by status (dikembalikan)
         $returnedReport = $this->reportService->getBorrowingReport(['status' => 'dikembalikan']);
         $this->assertCount(1, $returnedReport['data']);
-        $this->assertEquals('dikembalikan', $returnedReport['data']->first()->status);
+        $returnedStatus = $returnedReport['data']->first()->status;
+        $this->assertEquals('dikembalikan', $returnedStatus instanceof \App\Enums\BorrowingStatus ? $returnedStatus->value : $returnedStatus);
 
         // Filter by user
         $staffReport = $this->reportService->getBorrowingReport(['user_id' => $this->staff->id]);

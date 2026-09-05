@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -100,23 +101,26 @@ class UserController extends Controller
             ], 400);
         }
 
-        // Prevent deleting user with active borrowings
-        $hasActiveBorrowings = $user->borrowings()
-            ->whereIn('status', ['dipinjam', 'terlambat'])
-            ->exists();
+        return DB::transaction(function () use ($user) {
+            // Prevent deleting user with active borrowings
+            $hasActiveBorrowings = $user->borrowings()
+                ->whereIn('status', ['dipinjam', 'terlambat'])
+                ->lockForUpdate()
+                ->exists();
 
-        if ($hasActiveBorrowings) {
+            if ($hasActiveBorrowings) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus user yang masih memiliki peminjaman aktif'
+                ], 400);
+            }
+
+            $user->delete();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Tidak dapat menghapus user yang masih memiliki peminjaman aktif'
-            ], 400);
-        }
-
-        $user->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User berhasil dihapus'
-        ]);
+                'success' => true,
+                'message' => 'User berhasil dihapus'
+            ]);
+        });
     }
 }

@@ -6,6 +6,7 @@ use App\Exceptions\ItemException;
 use App\Models\Item;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -26,24 +27,35 @@ class ItemService
      */
     public function createItem(array $data): Item
     {
-        if (empty($data['code'])) {
-            $data['code'] = $this->generateItemCode();
-        }
+        return DB::transaction(function () use ($data) {
+            if (empty($data['code'])) {
+                $data['code'] = $this->generateItemCode();
+            }
 
-        if (!isset($data['available_stock'])) {
-            $data['available_stock'] = $data['stock'] ?? 0;
-        }
+            if (!isset($data['available_stock'])) {
+                $data['available_stock'] = $data['stock'] ?? 0;
+            }
 
-        if (isset($data['image']) && ($data['image'] instanceof UploadedFile || (is_string($data['image']) && file_exists($data['image'])))) {
-            $data['image'] = $this->handleImageUpload($data['image']);
-        }
+            $uploadedImage = null;
+            if (isset($data['image']) && ($data['image'] instanceof UploadedFile || (is_string($data['image']) && file_exists($data['image'])))) {
+                $uploadedImage = $this->handleImageUpload($data['image']);
+                $data['image'] = $uploadedImage;
+            }
 
-        $item = Item::create($data);
+            try {
+                $item = Item::create($data);
+            } catch (\Throwable $e) {
+                if ($uploadedImage) {
+                    Storage::disk('public')->delete($uploadedImage);
+                }
+                throw $e;
+            }
 
-        // Clear cache when item is created
-        $this->clearItemsCache();
+            // Clear cache when item is created
+            $this->clearItemsCache();
 
-        return $item->fresh(['category']);
+            return $item->fresh(['category']);
+        });
     }
 
     /**
@@ -51,27 +63,42 @@ class ItemService
      */
     public function updateItem(Item $item, array $data): Item
     {
-        if (isset($data['image']) && ($data['image'] instanceof UploadedFile || (is_string($data['image']) && file_exists($data['image'])))) {
-            // Delete old image if exists
-            if ($item->image) {
-                Storage::disk('public')->delete($item->image);
+        return DB::transaction(function () use ($item, $data) {
+            /** @var Item $lockedItem */
+            $lockedItem = Item::lockForUpdate()->findOrFail($item->id);
+            $oldImage = $lockedItem->image;
+            $newImage = null;
+
+            if (isset($data['image']) && ($data['image'] instanceof UploadedFile || (is_string($data['image']) && file_exists($data['image'])))) {
+                $newImage = $this->handleImageUpload($data['image']);
+                $data['image'] = $newImage;
             }
 
-            $data['image'] = $this->handleImageUpload($data['image']);
-        }
+            // Update available stock if total stock changes
+            if (isset($data['stock'])) {
+                $difference = $data['stock'] - $lockedItem->stock;
+                $data['available_stock'] = $lockedItem->available_stock + $difference;
+            }
 
-        // Update available stock if total stock changes
-        if (isset($data['stock'])) {
-            $difference = $data['stock'] - $item->stock;
-            $data['available_stock'] = $item->available_stock + $difference;
-        }
+            try {
+                $lockedItem->update($data);
+            } catch (\Throwable $e) {
+                if ($newImage) {
+                    Storage::disk('public')->delete($newImage);
+                }
+                throw $e;
+            }
 
-        $item->update($data);
+            // Delete old image if a new image was successfully stored and DB updated
+            if ($newImage && $oldImage && $newImage !== $oldImage) {
+                Storage::disk('public')->delete($oldImage);
+            }
 
-        // Clear cache when item is updated
-        $this->clearItemsCache();
+            // Clear cache when item is updated
+            $this->clearItemsCache();
 
-        return $item->fresh(['category']);
+            return $lockedItem->fresh(['category']);
+        });
     }
 
     /**
@@ -81,21 +108,27 @@ class ItemService
      */
     public function deleteItem(Item $item): bool
     {
-        // Check if item has active borrowings (pending, dipinjam, terlambat)
-        if ($item->borrowings()->whereIn('status', ['pending', 'dipinjam', 'terlambat'])->exists() || $item->activeBorrowings()->count() > 0) {
-            throw new ItemException('Cannot delete item with active borrowings', 422);
-        }
+        return DB::transaction(function () use ($item) {
+            /** @var Item $lockedItem */
+            $lockedItem = Item::lockForUpdate()->findOrFail($item->id);
 
-        if ($item->image) {
-            Storage::disk('public')->delete($item->image);
-        }
+            // Check if item has active borrowings (pending, dipinjam, terlambat)
+            if ($lockedItem->borrowings()->whereIn('status', ['pending', 'dipinjam', 'terlambat'])->exists() || $lockedItem->activeBorrowings()->count() > 0) {
+                throw new ItemException('Cannot delete item with active borrowings', 422);
+            }
 
-        $deleted = (bool) $item->delete();
+            $imageToDelete = $lockedItem->image;
+            $deleted = (bool) $lockedItem->delete();
 
-        // Clear cache when item is deleted
-        $this->clearItemsCache();
+            if ($deleted && $imageToDelete) {
+                Storage::disk('public')->delete($imageToDelete);
+            }
 
-        return $deleted;
+            // Clear cache when item is deleted
+            $this->clearItemsCache();
+
+            return $deleted;
+        });
     }
 
     /**
@@ -105,38 +138,46 @@ class ItemService
      */
     public function bulkDeleteItems(array $ids): array
     {
-        $items = Item::whereIn('id', $ids)->get();
+        return DB::transaction(function () use ($ids) {
+            $items = Item::whereIn('id', $ids)->lockForUpdate()->get();
 
-        $itemsWithBorrowings = [];
-        foreach ($items as $item) {
-            if ($item->borrowings()->whereIn('status', ['pending', 'dipinjam', 'terlambat'])->exists() || $item->activeBorrowings()->count() > 0) {
-                $itemsWithBorrowings[] = $item->name;
+            $itemsWithBorrowings = [];
+            foreach ($items as $item) {
+                if ($item->borrowings()->whereIn('status', ['pending', 'dipinjam', 'terlambat'])->exists() || $item->activeBorrowings()->count() > 0) {
+                    $itemsWithBorrowings[] = $item->name;
+                }
             }
-        }
 
-        if (!empty($itemsWithBorrowings)) {
-            throw new ItemException('Some items have active borrowings and cannot be deleted', 422, [
-                'success' => false,
-                'items' => $itemsWithBorrowings,
-            ]);
-        }
-
-        $count = 0;
-        foreach ($items as $item) {
-            if ($item->image) {
-                Storage::disk('public')->delete($item->image);
+            if (!empty($itemsWithBorrowings)) {
+                throw new ItemException('Some items have active borrowings and cannot be deleted', 422, [
+                    'success' => false,
+                    'items' => $itemsWithBorrowings,
+                ]);
             }
-            $item->delete();
-            $count++;
-        }
 
-        $this->clearItemsCache();
+            $imagesToDelete = [];
+            $count = 0;
+            foreach ($items as $item) {
+                if ($item->image) {
+                    $imagesToDelete[] = $item->image;
+                }
+                $item->delete();
+                $count++;
+            }
 
-        return [
-            'success' => true,
-            'message' => $count . ' items deleted successfully',
-            'count' => $count,
-        ];
+            // Delete storage images after DB deletions succeed within transaction
+            foreach ($imagesToDelete as $image) {
+                Storage::disk('public')->delete($image);
+            }
+
+            $this->clearItemsCache();
+
+            return [
+                'success' => true,
+                'message' => $count . ' items deleted successfully',
+                'count' => $count,
+            ];
+        });
     }
 
     /**

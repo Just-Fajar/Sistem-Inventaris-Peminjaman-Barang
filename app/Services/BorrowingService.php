@@ -223,12 +223,17 @@ class BorrowingService
      */
     public function cancelBorrowing(Borrowing $borrowing): bool
     {
-        $status = $this->getStatusValue($borrowing);
-        if ($status !== 'pending') {
-            throw new BorrowingException('Hanya peminjaman dengan status pending yang dapat dibatalkan', 422);
-        }
+        return DB::transaction(function () use ($borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        return (bool) $borrowing->delete();
+            $status = $this->getStatusValue($lockedBorrowing);
+            if ($status !== 'pending') {
+                throw new BorrowingException('Hanya peminjaman dengan status pending yang dapat dibatalkan', 422);
+            }
+
+            return (bool) $lockedBorrowing->delete();
+        });
     }
 
     /**
@@ -238,12 +243,17 @@ class BorrowingService
      */
     public function deleteBorrowing(Borrowing $borrowing): bool
     {
-        $status = $this->getStatusValue($borrowing);
-        if ($status === 'dipinjam' || $status === 'terlambat') {
-            throw new BorrowingException('Cannot delete active borrowing. Please return the item first.', 422);
-        }
+        return DB::transaction(function () use ($borrowing) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        return (bool) $borrowing->delete();
+            $status = $this->getStatusValue($lockedBorrowing);
+            if ($status === 'dipinjam' || $status === 'terlambat') {
+                throw new BorrowingException('Cannot delete active borrowing. Please return the item first.', 422);
+            }
+
+            return (bool) $lockedBorrowing->delete();
+        });
     }
 
     /**
@@ -253,24 +263,29 @@ class BorrowingService
      */
     public function extendBorrowing(Borrowing $borrowing, string $newDueDate): Borrowing
     {
-        $status = $this->getStatusValue($borrowing);
-        if ($status !== 'dipinjam') {
-            throw new BorrowingException('Only active borrowings can be extended', 422);
-        }
+        return DB::transaction(function () use ($borrowing, $newDueDate) {
+            /** @var Borrowing $lockedBorrowing */
+            $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
-        $newDate = Carbon::parse($newDueDate);
+            $status = $this->getStatusValue($lockedBorrowing);
+            if ($status !== 'dipinjam') {
+                throw new BorrowingException('Only active borrowings can be extended', 422);
+            }
 
-        if ($newDate->isBefore($borrowing->due_date) || $newDate->equalTo($borrowing->due_date)) {
-            throw new BorrowingException('Tanggal perpanjangan harus setelah tanggal jatuh tempo saat ini', 422);
-        }
+            $newDate = Carbon::parse($newDueDate);
 
-        $borrowing->update([
-            'due_date' => $newDate,
-        ]);
+            if ($newDate->isBefore($lockedBorrowing->due_date) || $newDate->equalTo($lockedBorrowing->due_date)) {
+                throw new BorrowingException('Tanggal perpanjangan harus setelah tanggal jatuh tempo saat ini', 422);
+            }
 
-        $borrowing->load(['user', 'item', 'approver']);
+            $lockedBorrowing->update([
+                'due_date' => $newDate,
+            ]);
 
-        return $borrowing->fresh();
+            $lockedBorrowing->load(['user', 'item', 'approver']);
+
+            return $lockedBorrowing->fresh();
+        });
     }
 
     /**
