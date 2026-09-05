@@ -151,7 +151,7 @@
             @if(isset($filters['status']))
             <tr>
                 <td>Status</td>
-                <td>: {{ ucfirst($filters['status']) }}</td>
+                <td>: {{ $filters['status'] instanceof \App\Enums\BorrowingStatus ? $filters['status']->label() : ucfirst((string) $filters['status']) }}</td>
             </tr>
             @endif
         </table>
@@ -203,8 +203,12 @@
                 <td>{{ $borrowing->borrow_date->format('d/m/Y') }}</td>
                 <td>{{ $borrowing->due_date->format('d/m/Y') }}</td>
                 <td>
-                    <span class="status status-{{ $borrowing->status }}">
-                        {{ ucfirst($borrowing->status) }}
+                    @php
+                        $statusVal = $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->value : (string) $borrowing->status;
+                        $statusLabel = $borrowing->status instanceof \App\Enums\BorrowingStatus ? $borrowing->status->label() : ucfirst((string) $borrowing->status);
+                    @endphp
+                    <span class="status status-{{ $statusVal }}">
+                        {{ $statusLabel }}
                     </span>
                 </td>
             </tr>

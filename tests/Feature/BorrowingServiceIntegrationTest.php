@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\BorrowingStatus;
 use App\Exceptions\BorrowingException;
 use App\Jobs\SendBorrowingNotification;
 use App\Models\Borrowing;
@@ -72,7 +73,7 @@ class BorrowingServiceIntegrationTest extends TestCase
         $borrowing = $this->borrowingService->createBorrowing($payload, $this->staff->id);
 
         $this->assertInstanceOf(Borrowing::class, $borrowing);
-        $this->assertEquals('dipinjam', $borrowing->status);
+        $this->assertEquals(BorrowingStatus::Dipinjam, $borrowing->status);
         $this->assertEquals(3, $borrowing->quantity);
         $this->assertStringStartsWith('BRW-', $borrowing->borrow_code);
         $this->assertEquals(7, $this->item->fresh()->available_stock);
@@ -90,7 +91,7 @@ class BorrowingServiceIntegrationTest extends TestCase
 
         $borrowing = $this->borrowingService->createBorrowing($payload, $this->staff->id);
 
-        $this->assertEquals('pending', $borrowing->status);
+        $this->assertEquals(BorrowingStatus::Pending, $borrowing->status);
         $this->assertEquals(10, $this->item->fresh()->available_stock);
     }
 
@@ -122,7 +123,7 @@ class BorrowingServiceIntegrationTest extends TestCase
 
         $approved = $this->borrowingService->approveBorrowing($borrowing, $this->admin->id);
 
-        $this->assertEquals('dipinjam', $approved->status);
+        $this->assertEquals(BorrowingStatus::Dipinjam, $approved->status);
         $this->assertEquals($this->admin->id, $approved->approved_by);
         $this->assertNotNull($approved->approved_at);
         $this->assertEquals(8, $this->item->fresh()->available_stock);
@@ -156,7 +157,7 @@ class BorrowingServiceIntegrationTest extends TestCase
 
         $rejected = $this->borrowingService->rejectBorrowing($borrowing);
 
-        $this->assertEquals('rejected', $rejected->status);
+        $this->assertEquals(BorrowingStatus::Rejected, $rejected->status);
         $this->assertEquals(10, $this->item->fresh()->available_stock);
     }
 
@@ -189,7 +190,7 @@ class BorrowingServiceIntegrationTest extends TestCase
 
         $returned = $this->borrowingService->returnBorrowing($borrowing);
 
-        $this->assertEquals('dikembalikan', $returned->status);
+        $this->assertEquals(BorrowingStatus::Dikembalikan, $returned->status);
         $this->assertNotNull($returned->return_date);
         $this->assertEquals(10, $this->item->fresh()->available_stock);
     }

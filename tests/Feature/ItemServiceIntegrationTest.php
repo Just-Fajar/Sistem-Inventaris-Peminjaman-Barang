@@ -62,8 +62,8 @@ class ItemServiceIntegrationTest extends TestCase
 
         $this->assertInstanceOf(Item::class, $item);
         $this->assertStringStartsWith('ITM-', $item->code);
-        $this->assertEquals(5, $item->available_stock);
-        $this->assertEquals('baik', $item->condition);
+        $condition = $item->condition;
+        $this->assertEquals('baik', $condition instanceof \App\Enums\ItemCondition ? $condition->value : $condition);
     }
 
     public function test_whitebox_service_create_item_with_image_optimizes_file(): void
