@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ItemCondition;
+use App\Models\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,7 +14,12 @@ class UpdateItemRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        $item = $this->route('item');
+        if ($item instanceof Item) {
+            return $this->user()?->can('update', $item) ?? false;
+        }
+
+        return $this->user()?->can('update', Item::class) ?? false;
     }
 
     /**
