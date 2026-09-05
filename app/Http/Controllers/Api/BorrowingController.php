@@ -6,6 +6,7 @@ use App\Exceptions\BorrowingException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBorrowingRequest;
 use App\Http\Requests\UpdateBorrowingRequest;
+use App\Http\Resources\BorrowingResource;
 use App\Models\Borrowing;
 use App\Services\BorrowingService;
 use Carbon\Carbon;
@@ -98,6 +99,7 @@ class BorrowingController extends Controller
         $this->borrowingService->checkOverdueBorrowings(dispatchNotifications: false);
 
         $borrowings = $query->paginate($request->per_page ?? 15);
+        $borrowings->through(fn ($borrowing) => new BorrowingResource($borrowing));
 
         return response()->json($borrowings);
     }
@@ -109,11 +111,12 @@ class BorrowingController extends Controller
     {
         try {
             $borrowing = $this->borrowingService->createBorrowing($request->validated(), $request->user()->id);
+            $borrowing->load(['user', 'item.category', 'approver']);
 
-            return response()->json([
-                'message' => 'Borrowing created successfully',
-                'data' => $borrowing,
-            ], 201);
+            return (new BorrowingResource($borrowing))
+                ->additional(['message' => 'Borrowing created successfully'])
+                ->response()
+                ->setStatusCode(201);
         } catch (BorrowingException $e) {
             return response()->json(array_merge([
                 'message' => $e->getMessage(),
@@ -129,9 +132,7 @@ class BorrowingController extends Controller
         $borrowing->load(['user', 'item.category', 'approver']);
         $borrowing->updateOverdueStatus();
 
-        return response()->json([
-            'data' => $borrowing,
-        ]);
+        return new BorrowingResource($borrowing);
     }
 
     /**
@@ -141,11 +142,12 @@ class BorrowingController extends Controller
     {
         try {
             $returned = $this->borrowingService->returnBorrowing($borrowing, $request->input('return_date'));
+            $returned->load(['user', 'item.category', 'approver']);
 
-            return response()->json([
-                'message' => 'Item returned successfully',
-                'data' => $returned,
-            ], 200);
+            return (new BorrowingResource($returned))
+                ->additional(['message' => 'Item returned successfully'])
+                ->response()
+                ->setStatusCode(200);
         } catch (BorrowingException $e) {
             return response()->json(array_merge([
                 'message' => $e->getMessage(),
@@ -166,11 +168,12 @@ class BorrowingController extends Controller
 
         try {
             $approved = $this->borrowingService->approveBorrowing($borrowing, $request->user()->id);
+            $approved->load(['user', 'item.category', 'approver']);
 
-            return response()->json([
-                'message' => 'Borrowing approved successfully',
-                'data' => $approved,
-            ], 200);
+            return (new BorrowingResource($approved))
+                ->additional(['message' => 'Borrowing approved successfully'])
+                ->response()
+                ->setStatusCode(200);
         } catch (BorrowingException $e) {
             return response()->json(array_merge([
                 'message' => $e->getMessage(),
@@ -191,11 +194,12 @@ class BorrowingController extends Controller
 
         try {
             $rejected = $this->borrowingService->rejectBorrowing($borrowing);
+            $rejected->load(['user', 'item.category', 'approver']);
 
-            return response()->json([
-                'message' => 'Borrowing rejected successfully',
-                'data' => $rejected,
-            ], 200);
+            return (new BorrowingResource($rejected))
+                ->additional(['message' => 'Borrowing rejected successfully'])
+                ->response()
+                ->setStatusCode(200);
         } catch (BorrowingException $e) {
             return response()->json(array_merge([
                 'message' => $e->getMessage(),
@@ -215,12 +219,12 @@ class BorrowingController extends Controller
         }
 
         $borrowing->update($request->validated());
-        $borrowing->load(['user', 'item', 'approver']);
+        $borrowing->load(['user', 'item.category', 'approver']);
 
-        return response()->json([
-            'message' => 'Borrowing updated successfully',
-            'data' => $borrowing,
-        ]);
+        return (new BorrowingResource($borrowing))
+            ->additional(['message' => 'Borrowing updated successfully'])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
@@ -252,11 +256,12 @@ class BorrowingController extends Controller
 
         try {
             $extended = $this->borrowingService->extendBorrowing($borrowing, $validated['new_due_date']);
+            $extended->load(['user', 'item.category', 'approver']);
 
-            return response()->json([
-                'message' => 'Borrowing extended successfully',
-                'data' => $extended,
-            ]);
+            return (new BorrowingResource($extended))
+                ->additional(['message' => 'Borrowing extended successfully'])
+                ->response()
+                ->setStatusCode(200);
         } catch (BorrowingException $e) {
             return response()->json(array_merge([
                 'message' => $e->getMessage(),
@@ -269,7 +274,7 @@ class BorrowingController extends Controller
      */
     public function myBorrowings(Request $request)
     {
-        $query = Borrowing::with(['item.category'])
+        $query = Borrowing::with(['user', 'item.category', 'approver'])
             ->where('user_id', $request->user()->id);
 
         // Filter by status
@@ -278,6 +283,7 @@ class BorrowingController extends Controller
         }
 
         $borrowings = $query->latest()->paginate($request->per_page ?? 15);
+        $borrowings->through(fn ($borrowing) => new BorrowingResource($borrowing));
 
         return response()->json($borrowings);
     }

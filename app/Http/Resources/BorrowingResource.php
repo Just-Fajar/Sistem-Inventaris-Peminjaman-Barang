@@ -14,13 +14,18 @@ class BorrowingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $isOverdue = ($this->status === 'terlambat') || 
+            ($this->status === 'dipinjam' && $this->due_date && $this->due_date->isPast());
+
+        $daysOverdue = ($isOverdue && $this->due_date) ? abs((int) now()->diffInDays($this->due_date)) : 0;
+
         return [
             'id' => $this->id,
             'borrow_code' => $this->borrow_code,
             'code' => $this->borrow_code,
             'user_id' => $this->user_id,
             'item_id' => $this->item_id,
-            'quantity' => $this->quantity,
+            'quantity' => (int) $this->quantity,
             'borrow_date' => $this->borrow_date?->format('Y-m-d'),
             'due_date' => $this->due_date?->format('Y-m-d'),
             'return_date' => $this->return_date?->format('Y-m-d'),
@@ -37,14 +42,8 @@ class BorrowingResource extends JsonResource
             'approver' => new UserResource($this->whenLoaded('approver')),
             
             // Calculated fields
-            'is_overdue' => $this->when(
-                $this->status === 'dipinjam' && $this->due_date && $this->due_date->isPast(),
-                true
-            ),
-            'days_overdue' => $this->when(
-                $this->status === 'dipinjam' && $this->due_date && $this->due_date->isPast(),
-                now()->diffInDays($this->due_date)
-            ),
+            'is_overdue' => $isOverdue,
+            'days_overdue' => $this->when($isOverdue, $daysOverdue),
         ];
     }
 }
