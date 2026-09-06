@@ -32,6 +32,7 @@ class BorrowingResource extends JsonResource
             'return_date' => $this->return_date?->format('Y-m-d'),
             'status' => $statusValue,
             'notes' => $this->notes,
+            'rejection_note' => $this->rejection_note,
             'approved_by' => $this->approved_by,
             'approved_at' => $this->approved_at?->format('Y-m-d H:i:s'),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
