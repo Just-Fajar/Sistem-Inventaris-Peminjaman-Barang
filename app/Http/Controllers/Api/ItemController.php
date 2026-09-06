@@ -25,74 +25,7 @@ class ItemController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Item::with('category');
-
-        // Search - improved with multiple field search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('category', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        // Filter by multiple categories
-        if ($request->has('categories') && is_array($request->categories)) {
-            $query->whereIn('category_id', $request->categories);
-        }
-        // Single category filter (backward compatibility)
-        elseif ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        // Filter by multiple conditions
-        if ($request->has('conditions') && is_array($request->conditions)) {
-            $query->whereIn('condition', $request->conditions);
-        }
-        // Single condition filter (backward compatibility)
-        elseif ($request->has('condition')) {
-            $query->where('condition', $request->condition);
-        }
-
-        // Filter by stock range
-        if ($request->has('stock_min') || $request->has('min_stock')) {
-            $query->where('stock', '>=', $request->input('stock_min', $request->input('min_stock')));
-        }
-        if ($request->has('stock_max') || $request->has('max_stock')) {
-            $query->where('stock', '<=', $request->input('stock_max', $request->input('max_stock')));
-        }
-
-        // Filter by availability
-        if ($request->has('available') && $request->available === 'true') {
-            $query->where('available_stock', '>', 0);
-        }
-
-        // Low stock filter
-        if ($request->has('low_stock') && $request->low_stock === 'true') {
-            $query->whereRaw('available_stock <= stock * 0.2')->where('available_stock', '>', 0);
-        }
-
-        // Out of stock filter
-        if ($request->has('out_of_stock') && $request->out_of_stock === 'true') {
-            $query->where('available_stock', '=', 0);
-        }
-
-        // Sorting
-        $sortBy = $request->input('sort_by', 'created_at');
-        $sortOrder = $request->input('sort_order', 'desc');
-        
-        $allowedSorts = ['name', 'stock', 'available_stock', 'created_at', 'updated_at'];
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortOrder);
-        } else {
-            $query->latest();
-        }
-
-        $items = $query->paginate($request->per_page ?? 15);
+        $items = $this->itemService->getCachedItems($request->all());
         $items->through(fn ($item) => new ItemResource($item));
 
         return response()->json($items);
