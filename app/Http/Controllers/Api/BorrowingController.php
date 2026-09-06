@@ -96,9 +96,6 @@ class BorrowingController extends Controller
             $query->latest();
         }
 
-        // Batch update overdue status atomically via service
-        $this->borrowingService->checkOverdueBorrowings(dispatchNotifications: false);
-
         $borrowings = $query->paginate($request->per_page ?? 15);
         $borrowings->through(fn ($borrowing) => new BorrowingResource($borrowing));
 

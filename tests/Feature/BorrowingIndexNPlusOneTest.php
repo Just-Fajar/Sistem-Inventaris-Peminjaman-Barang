@@ -155,17 +155,17 @@ class BorrowingIndexNPlusOneTest extends TestCase
         DB::disableQueryLog();
 
         // Check the queries executed:
-        // Before the fix, there was 1 query to get all items + 15 individual UPDATE queries (N+1) + paginate queries
-        // With batch update, there should be exactly ONE update query for all overdue records, NOT 15 updates!
+        // In F11, mutation was removed from index() and delegated to scheduled command.
+        // Index GET request is pure read-only with ZERO UPDATE queries!
         $updateQueries = array_filter($queries, function ($q) {
             return stripos($q['query'], 'update') !== false && stripos($q['query'], 'borrowings') !== false;
         });
 
-        // Assert exactly 1 batch update query was executed (O(1) instead of O(N))
-        $this->assertCount(1, $updateQueries, 'Expected exactly 1 atomic batch UPDATE query, found ' . count($updateQueries));
+        // Assert 0 update queries during index read
+        $this->assertCount(0, $updateQueries, 'Expected 0 UPDATE queries during index read, found ' . count($updateQueries));
 
-        // Ensure total queries is small and constant (batch update + count + select limit + eager loads)
-        $this->assertLessThanOrEqual(6, count($queries), 'Total queries exceeded threshold, possible query leak.');
+        // Ensure total queries is small and constant (count + select limit + eager loads)
+        $this->assertLessThanOrEqual(5, count($queries), 'Total queries exceeded threshold, possible query leak.');
     }
 
     public function test_whitebox_artisan_command_updates_overdue_borrowings(): void
@@ -236,11 +236,23 @@ class BorrowingIndexNPlusOneTest extends TestCase
             'return_date' => Carbon::today()->subDays(2)->toDateString(),
         ]);
 
-        // Trigger index action
+        // 1. Trigger index action - pure read (assert is_overdue flag is true in resource, but DB record not mutated by GET)
         $response = $this->getJson('/api/borrowings');
         $response->assertStatus(200);
 
-        // Direct database assertions
+        $eligibleData = collect($response->json('data'))->firstWhere('id', $eligible->id);
+        $this->assertTrue($eligibleData['is_overdue']);
+
+        // Before scheduled command runs, DB status remains 'dipinjam' (CQS separation)
+        $this->assertDatabaseHas('borrowings', [
+            'id' => $eligible->id,
+            'status' => 'dipinjam',
+        ]);
+
+        // 2. Execute the scheduled Artisan command
+        $this->artisan('borrowings:check-overdue')->assertSuccessful();
+
+        // Direct database assertions after scheduled command execution
         $this->assertDatabaseHas('borrowings', [
             'id' => $eligible->id,
             'status' => 'terlambat',
