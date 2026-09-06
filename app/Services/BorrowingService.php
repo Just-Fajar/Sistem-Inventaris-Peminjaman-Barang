@@ -156,7 +156,7 @@ class BorrowingService
             throw new BorrowingException('Peminjaman sudah diproses.', 400);
         }
 
-        return DB::transaction(function () use ($borrowing, $rejectionNote) {
+        $rejectedBorrowing = DB::transaction(function () use ($borrowing, $rejectionNote) {
             /** @var Borrowing $lockedBorrowing */
             $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
@@ -173,6 +173,16 @@ class BorrowingService
 
             return $lockedBorrowing;
         });
+
+        // Dispatch queue job for notification
+        try {
+            SendBorrowingNotification::dispatch($rejectedBorrowing, 'rejected');
+        } catch (\Throwable $e) {
+            // Log error but don't fail the rejection
+            report($e);
+        }
+
+        return $rejectedBorrowing;
     }
 
     /**

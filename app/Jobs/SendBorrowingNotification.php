@@ -41,7 +41,7 @@ class SendBorrowingNotification implements ShouldQueue
                 $user->notify(new \App\Notifications\BorrowingApprovedNotification($this->borrowing));
                 break;
             case 'rejected':
-                // Implement if rejection notification exists
+                $user->notify(new \App\Notifications\BorrowingRejectedNotification($this->borrowing));
                 break;
             case 'reminder':
                 // Implement reminder notification
