@@ -41,18 +41,28 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        if (!config('auth.registration_enabled', true)) {
+            return response()->json([
+                'message' => 'Registration is currently disabled. Contact administrator.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'string', 'confirmed', new StrongPassword()],
+            'role' => 'prohibited',
+        ], [
+            'role.prohibited' => 'Role tidak boleh ditentukan saat registrasi.',
         ]);
 
-        $user = User::create([
+        $user = new User([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'staff',
         ]);
+        $user->role = 'staff';
+        $user->save();
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
