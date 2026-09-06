@@ -33,8 +33,13 @@ class UserController extends Controller
             'role' => 'required|in:admin,staff',
         ]);
 
+        $role = $validated['role'];
+        unset($validated['role']);
         $validated['password'] = Hash::make($validated['password']);
-        $user = User::create($validated);
+
+        $user = new User($validated);
+        $user->role = $role;
+        $user->save();
 
         return (new UserResource($user))
             ->additional([
@@ -69,13 +74,20 @@ class UserController extends Controller
             'role' => 'required|in:admin,staff',
         ]);
 
+        $role = $validated['role'] ?? null;
+        unset($validated['role']);
+
         if (!empty($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
 
-        $user->update($validated);
+        $user->fill($validated);
+        if ($role !== null) {
+            $user->role = $role;
+        }
+        $user->save();
 
         return (new UserResource($user))
             ->additional([

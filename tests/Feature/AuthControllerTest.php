@@ -33,7 +33,7 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
-    public function test_registration_ignores_role_input_and_defaults_to_staff(): void
+    public function test_registration_rejects_role_input_to_prevent_privilege_escalation(): void
     {
         $response = $this->postJson('/api/auth/register', [
             'name' => 'Attempted Admin',
@@ -43,12 +43,11 @@ class AuthControllerTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $response->assertStatus(201)
-            ->assertJsonPath('user.role', 'staff');
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['role']);
 
-        $this->assertDatabaseHas('users', [
+        $this->assertDatabaseMissing('users', [
             'email' => 'attacker@example.com',
-            'role' => 'staff',
         ]);
     }
 

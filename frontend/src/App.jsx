@@ -23,6 +23,7 @@ const Reports = lazy(() => import('./pages/Reports'));
 const UserList = lazy(() => import('./pages/UserList'));
 const UserForm = lazy(() => import('./pages/UserForm'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Register = lazy(() => import('./pages/Register'));
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -48,6 +49,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<SuspenseWrapper><Register /></SuspenseWrapper>} />
         
         {/* Protected Routes with Layout */}
         <Route
