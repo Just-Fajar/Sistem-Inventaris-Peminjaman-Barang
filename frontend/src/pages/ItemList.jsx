@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useDebounce } from '../hooks/useDebounce';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { categoryService } from '../services/categoryService';
 import { itemService } from '../services/itemService';
 
@@ -7,13 +9,23 @@ function ItemList() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [conditionFilter, setConditionFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [displayMode, setDisplayMode] = useState('pagination'); // 'pagination' | 'infinite'
 
-  // Memoize loadCategories untuk menghindari re-creation
+  // Ref tracking prior filters to reset page to 1 upon changes
+  const prevFiltersRef = useRef({
+    search: debouncedSearch,
+    category: categoryFilter,
+    condition: conditionFilter,
+  });
+
+  // Memoize loadCategories
   const loadCategories = useCallback(async () => {
     try {
       const response = await categoryService.getAll({ all: true });
@@ -23,44 +35,102 @@ function ItemList() {
     }
   }, []);
 
-  // Memoize loadItems untuk menghindari re-creation
-  const loadItems = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = {
-        page: currentPage,
-        search,
-        category_id: categoryFilter,
-        condition: conditionFilter,
-      };
-      const response = await itemService.getAll(params);
-      setItems(response.data);
-      setTotalPages(response.last_page || 1);
-    } catch (error) {
-      console.error('Failed to load items:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, search, categoryFilter, conditionFilter]);
+  // Memoize loadItems
+  const loadItems = useCallback(
+    async (pageToLoad, isAppend = false) => {
+      try {
+        if (isAppend) {
+          setLoadingMore(true);
+        } else {
+          setLoading(true);
+        }
+
+        const params = {
+          page: pageToLoad,
+          search: debouncedSearch,
+          category_id: categoryFilter,
+          condition: conditionFilter,
+        };
+
+        const response = await itemService.getAll(params);
+        const data = response.data || [];
+        const lastPage = response.last_page || response.meta?.last_page || 1;
+
+        setTotalPages(lastPage);
+
+        if (isAppend) {
+          setItems((prev) => [...prev, ...data]);
+        } else {
+          setItems(data);
+        }
+      } catch (error) {
+        console.error('Failed to load items:', error);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [debouncedSearch, categoryFilter, conditionFilter]
+  );
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
 
+  // Load items when page, filters, or mode changes
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    const prev = prevFiltersRef.current;
+    const filtersChanged =
+      prev.search !== debouncedSearch ||
+      prev.category !== categoryFilter ||
+      prev.condition !== conditionFilter;
+
+    if (filtersChanged) {
+      prevFiltersRef.current = {
+        search: debouncedSearch,
+        category: categoryFilter,
+        condition: conditionFilter,
+      };
+
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        return;
+      }
+    }
+
+    const isAppend = displayMode === 'infinite' && currentPage > 1 && !filtersChanged;
+    loadItems(currentPage, isAppend);
+  }, [currentPage, debouncedSearch, categoryFilter, conditionFilter, displayMode, loadItems]);
+
+  const handleModeChange = (mode) => {
+    if (mode === displayMode) return;
+    setDisplayMode(mode);
+    setCurrentPage(1);
+  };
+
+  const handleLoadMore = useCallback(() => {
+    if (displayMode === 'infinite' && !loading && !loadingMore && currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [displayMode, loading, loadingMore, currentPage, totalPages]);
+
+  const { sentinelRef } = useInfiniteScroll({
+    onLoadMore: handleLoadMore,
+    hasMore: displayMode === 'infinite' && currentPage < totalPages,
+    loading: loading || loadingMore,
+    rootMargin: '250px',
+  });
 
   const handleDelete = useCallback(async (id) => {
     if (!window.confirm('Yakin ingin menghapus barang ini?')) return;
 
     try {
       await itemService.delete(id);
-      loadItems();
+      setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       alert(error.response?.data?.message || 'Gagal menghapus barang');
     }
-  }, [loadItems]);
+  }, []);
 
   // Memoize condition badge calculator
   const getConditionBadge = useMemo(() => {
@@ -75,20 +145,57 @@ function ItemList() {
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Manajemen Barang</h1>
           <p className="text-gray-600 mt-1">Kelola data barang inventaris</p>
         </div>
-        <Link
-          to="/items/create"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Tambah Barang</span>
-        </Link>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Dual-Mode Toggle */}
+          <div className="inline-flex bg-gray-100 p-1 rounded-lg border border-gray-200 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => handleModeChange('pagination')}
+              className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
+                displayMode === 'pagination'
+                  ? 'bg-white text-gray-900 shadow-sm font-semibold'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="Mode Halaman Tradisional"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Halaman</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('infinite')}
+              className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
+                displayMode === 'infinite'
+                  ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="Mode Scroll Otomatis (Infinite Scroll)"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span>Scroll Otomatis</span>
+            </button>
+          </div>
+
+          <Link
+            to="/items/create"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 text-sm font-medium shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Tambah Barang</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -232,8 +339,30 @@ function ItemList() {
               </tbody>
             </table>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
+            {/* Mode Infinite Scroll: Sentinel / Footer Notice */}
+            {displayMode === 'infinite' && (
+              <div className="bg-white px-6 py-4 border-t border-gray-200">
+                {currentPage < totalPages ? (
+                  <div ref={sentinelRef} className="flex flex-col items-center justify-center py-2">
+                    {loadingMore ? (
+                      <div className="flex items-center space-x-2 text-blue-600 text-sm font-medium">
+                        <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span>Memuat lebih banyak barang...</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">Gulir ke bawah untuk memuat lebih banyak...</span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-sm text-gray-500 py-1 font-medium">
+                    Semua barang telah ditampilkan ({items.length} data)
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Mode Pagination: Traditional Numbered Buttons */}
+            {displayMode === 'pagination' && totalPages > 1 && (
               <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
