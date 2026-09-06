@@ -73,10 +73,10 @@ class BorrowingServiceIntegrationTest extends TestCase
         $borrowing = $this->borrowingService->createBorrowing($payload, $this->staff->id);
 
         $this->assertInstanceOf(Borrowing::class, $borrowing);
-        $this->assertEquals(BorrowingStatus::Dipinjam, $borrowing->status);
+        $this->assertEquals(BorrowingStatus::Pending, $borrowing->status);
         $this->assertEquals(3, $borrowing->quantity);
         $this->assertStringStartsWith('BRW-', $borrowing->borrow_code);
-        $this->assertEquals(7, $this->item->fresh()->available_stock);
+        $this->assertEquals(10, $this->item->fresh()->available_stock);
     }
 
     public function test_whitebox_service_create_borrowing_pending_does_not_deduct_stock_immediately(): void
@@ -292,6 +292,9 @@ class BorrowingServiceIntegrationTest extends TestCase
         $response->assertStatus(201)
             ->assertJson([
                 'message' => 'Borrowing created successfully',
+                'data' => [
+                    'status' => 'pending',
+                ],
             ])
             ->assertJsonStructure([
                 'message',
@@ -305,7 +308,7 @@ class BorrowingServiceIntegrationTest extends TestCase
                 ],
             ]);
 
-        $this->assertEquals(8, $this->item->fresh()->available_stock);
+        $this->assertEquals(10, $this->item->fresh()->available_stock);
     }
 
     public function test_blackbox_store_endpoint_handles_service_exception_with_422(): void

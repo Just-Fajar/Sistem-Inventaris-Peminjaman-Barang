@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Enums\BorrowingStatus;
 use App\Models\Borrowing;
 use App\Models\Item;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Services\BorrowingService;
 use App\Services\ItemService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class BorrowingServiceTest extends TestCase
@@ -22,6 +24,7 @@ class BorrowingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Queue::fake();
         $itemService = new ItemService();
         $this->borrowingService = new BorrowingService($itemService);
         $this->item = Item::factory()->create(['stock' => 10, 'available_stock' => 10]);
@@ -31,6 +34,7 @@ class BorrowingServiceTest extends TestCase
     public function test_can_generate_unique_borrowing_code(): void
     {
         $code1 = $this->borrowingService->generateBorrowingCode();
+        Borrowing::factory()->create(['borrow_code' => $code1]);
         $code2 = $this->borrowingService->generateBorrowingCode();
 
         $this->assertStringStartsWith('BRW-', $code1);
@@ -50,7 +54,7 @@ class BorrowingServiceTest extends TestCase
 
         $borrowing = $this->borrowingService->createBorrowing($data, $this->user->id);
 
-        $this->assertEquals('pending', $borrowing->status);
+        $this->assertEquals(BorrowingStatus::Pending, $borrowing->status);
         $this->assertEquals(2, $borrowing->quantity);
         $this->assertStringStartsWith('BRW-', $borrowing->code);
     }
@@ -64,10 +68,10 @@ class BorrowingServiceTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->borrowingService->approveBorrowing($borrowing, $admin->id);
+        $approved = $this->borrowingService->approveBorrowing($borrowing, $admin->id);
 
-        $this->assertEquals('approved', $borrowing->status);
-        $this->assertEquals($admin->id, $borrowing->approved_by);
+        $this->assertEquals(BorrowingStatus::Dipinjam, $approved->status);
+        $this->assertEquals($admin->id, $approved->approved_by);
     }
 
     public function test_stock_decreases_when_approved(): void
@@ -92,16 +96,15 @@ class BorrowingServiceTest extends TestCase
         $borrowing = Borrowing::factory()->create([
             'item_id' => $this->item->id,
             'quantity' => 2,
-            'status' => 'approved',
+            'status' => 'dipinjam',
         ]);
 
         $this->item->update(['available_stock' => 8]);
 
-        $this->borrowingService->returnBorrowing($borrowing, 'good');
+        $returned = $this->borrowingService->returnBorrowing($borrowing);
 
-        $this->assertEquals('returned', $borrowing->status);
-        $this->assertNotNull($borrowing->return_date);
-        $this->assertEquals('good', $borrowing->return_condition);
+        $this->assertEquals(BorrowingStatus::Dikembalikan, $returned->status);
+        $this->assertNotNull($returned->return_date);
     }
 
     public function test_stock_increases_when_returned(): void
@@ -109,13 +112,13 @@ class BorrowingServiceTest extends TestCase
         $borrowing = Borrowing::factory()->create([
             'item_id' => $this->item->id,
             'quantity' => 3,
-            'status' => 'approved',
+            'status' => 'dipinjam',
         ]);
 
         $this->item->update(['available_stock' => 7]);
         $stockBeforeReturn = $this->item->available_stock;
 
-        $this->borrowingService->returnBorrowing($borrowing, 'good');
+        $this->borrowingService->returnBorrowing($borrowing);
         $this->item->refresh();
 
         $this->assertEquals($stockBeforeReturn + 3, $this->item->available_stock);
@@ -124,13 +127,14 @@ class BorrowingServiceTest extends TestCase
     public function test_can_extend_due_date(): void
     {
         $borrowing = Borrowing::factory()->create([
+            'status' => 'dipinjam',
             'due_date' => Carbon::today()->addDays(7),
         ]);
 
         $newDueDate = Carbon::today()->addDays(14)->toDateString();
-        $borrowing = $this->borrowingService->extendBorrowing($borrowing, $newDueDate);
+        $extended = $this->borrowingService->extendBorrowing($borrowing, $newDueDate);
 
-        $this->assertEquals($newDueDate, $borrowing->due_date);
+        $this->assertEquals($newDueDate, $extended->due_date->toDateString());
     }
 
     public function test_can_check_overdue_borrowings(): void

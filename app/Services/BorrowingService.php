@@ -69,13 +69,14 @@ class BorrowingService
 
             $data['borrow_code'] = $this->generateBorrowingCode();
             $data['user_id'] = $userId;
-            $status = $data['status'] ?? 'dipinjam';
+            $status = $data['status'] ?? BorrowingStatus::Pending->value;
             $data['status'] = $status;
 
             $borrowing = Borrowing::create($data);
 
-            // Deduct stock if not pending
-            if ($status !== 'pending') {
+            // Deduct stock only if not pending (pending requests preserve stock until admin approval)
+            $statusValue = $status instanceof BorrowingStatus ? $status->value : (string) $status;
+            if ($statusValue !== BorrowingStatus::Pending->value) {
                 $this->itemService->decreaseStock($item, $data['quantity']);
             }
 
