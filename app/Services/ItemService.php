@@ -239,28 +239,75 @@ class ItemService
     }
 
     /**
-     * Get items with caching.
+     * Get items with caching and comprehensive filtering.
      */
     public function getCachedItems(array $filters = []): mixed
     {
-        $cacheKey = 'items:' . md5(json_encode($filters));
+        $normalizedFilters = $filters;
+        ksort($normalizedFilters);
+        $page = $filters['page'] ?? (function_exists('request') && request() ? request('page', 1) : 1);
+        $cacheKey = 'items:' . md5(json_encode($normalizedFilters) . ':page:' . $page);
 
         $callback = function () use ($filters) {
             $query = Item::with('category');
 
-            if (isset($filters['category_id'])) {
+            // Search by name, code, description, or category name
+            if (!empty($filters['search'])) {
+                $search = $filters['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('code', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhereHas('category', function ($q) use ($search) {
+                          $q->where('name', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            // Filter by multiple or single category
+            if (!empty($filters['categories']) && is_array($filters['categories'])) {
+                $query->whereIn('category_id', $filters['categories']);
+            } elseif (!empty($filters['category_id'])) {
                 $query->where('category_id', $filters['category_id']);
             }
 
-            if (isset($filters['condition'])) {
+            // Filter by multiple or single condition
+            if (!empty($filters['conditions']) && is_array($filters['conditions'])) {
+                $query->whereIn('condition', $filters['conditions']);
+            } elseif (!empty($filters['condition'])) {
                 $query->where('condition', $filters['condition']);
             }
 
-            if (isset($filters['search'])) {
-                $query->where(function ($q) use ($filters) {
-                    $q->where('name', 'like', '%' . $filters['search'] . '%')
-                      ->orWhere('code', 'like', '%' . $filters['search'] . '%');
-                });
+            // Stock range filtering
+            if (isset($filters['stock_min']) || isset($filters['min_stock'])) {
+                $minStock = $filters['stock_min'] ?? $filters['min_stock'];
+                $query->where('stock', '>=', $minStock);
+            }
+            if (isset($filters['stock_max']) || isset($filters['max_stock'])) {
+                $maxStock = $filters['stock_max'] ?? $filters['max_stock'];
+                $query->where('stock', '<=', $maxStock);
+            }
+
+            // Availability filters
+            if (isset($filters['available']) && ($filters['available'] === 'true' || $filters['available'] === true || $filters['available'] === '1' || $filters['available'] === 1)) {
+                $query->where('available_stock', '>', 0);
+            }
+            if (isset($filters['low_stock']) && ($filters['low_stock'] === 'true' || $filters['low_stock'] === true || $filters['low_stock'] === '1' || $filters['low_stock'] === 1)) {
+                $query->whereRaw('available_stock <= stock * 0.2')->where('available_stock', '>', 0);
+            }
+            if (isset($filters['out_of_stock']) && ($filters['out_of_stock'] === 'true' || $filters['out_of_stock'] === true || $filters['out_of_stock'] === '1' || $filters['out_of_stock'] === 1)) {
+                $query->where('available_stock', '=', 0);
+            }
+
+            // Sorting
+            $sortBy = $filters['sort_by'] ?? 'created_at';
+            $sortOrder = $filters['sort_order'] ?? 'desc';
+            $allowedSorts = ['name', 'stock', 'available_stock', 'created_at', 'updated_at'];
+
+            if (in_array($sortBy, $allowedSorts)) {
+                $query->orderBy($sortBy, $sortOrder);
+            } else {
+                $query->latest();
             }
 
             return $query->paginate($filters['per_page'] ?? 15);
