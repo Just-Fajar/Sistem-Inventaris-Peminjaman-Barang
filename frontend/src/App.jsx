@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Loading from './components/common/Loading';
 import OfflineBanner from './components/common/OfflineBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { authService } from './services/authService';
 
 // Eager load Layout and Login (critical paths)
@@ -47,54 +48,56 @@ function SuspenseWrapper({ children }) {
 function App() {
   return (
     <ErrorBoundary>
-      <OfflineBanner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<SuspenseWrapper><Register /></SuspenseWrapper>} />
-          <Route path="/forgot-password" element={<SuspenseWrapper><ForgotPassword /></SuspenseWrapper>} />
-          <Route path="/reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
-        
-        {/* Protected Routes with Layout */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<SuspenseWrapper><Dashboard /></SuspenseWrapper>} />
+      <ThemeProvider>
+        <OfflineBanner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<SuspenseWrapper><Register /></SuspenseWrapper>} />
+            <Route path="/forgot-password" element={<SuspenseWrapper><ForgotPassword /></SuspenseWrapper>} />
+            <Route path="/reset-password" element={<SuspenseWrapper><ResetPassword /></SuspenseWrapper>} />
           
-          {/* Items Routes */}
-          <Route path="items" element={<SuspenseWrapper><ItemList /></SuspenseWrapper>} />
-          <Route path="items/create" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
-          <Route path="items/:id" element={<SuspenseWrapper><ItemDetail /></SuspenseWrapper>} />
-          <Route path="items/:id/edit" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
-          
-          {/* Categories Routes */}
-          <Route path="categories" element={<SuspenseWrapper><CategoryList /></SuspenseWrapper>} />
-          
-          {/* Borrowings Routes */}
-          <Route path="borrowings" element={<SuspenseWrapper><BorrowingList /></SuspenseWrapper>} />
-          <Route path="borrowings/create" element={<SuspenseWrapper><BorrowingForm /></SuspenseWrapper>} />
-          <Route path="borrowings/:id" element={<SuspenseWrapper><BorrowingDetail /></SuspenseWrapper>} />
-          <Route path="borrowings/:id/return" element={<SuspenseWrapper><ReturnForm /></SuspenseWrapper>} />
-          
-          {/* Reports Routes */}
-          <Route path="reports" element={<SuspenseWrapper><Reports /></SuspenseWrapper>} />
-          
-          {/* Users Routes (Admin Only) */}
-          <Route path="users" element={<SuspenseWrapper><UserList /></SuspenseWrapper>} />
-          <Route path="users/create" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
-          <Route path="users/:id/edit" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
-          
-          {/* Profile Routes */}
-          <Route path="profile" element={<SuspenseWrapper><Profile /></SuspenseWrapper>} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            {/* Protected Routes with Layout */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<SuspenseWrapper><Dashboard /></SuspenseWrapper>} />
+              
+              {/* Items Routes */}
+              <Route path="items" element={<SuspenseWrapper><ItemList /></SuspenseWrapper>} />
+              <Route path="items/create" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
+              <Route path="items/:id" element={<SuspenseWrapper><ItemDetail /></SuspenseWrapper>} />
+              <Route path="items/:id/edit" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
+              
+              {/* Categories Routes */}
+              <Route path="categories" element={<SuspenseWrapper><CategoryList /></SuspenseWrapper>} />
+              
+              {/* Borrowings Routes */}
+              <Route path="borrowings" element={<SuspenseWrapper><BorrowingList /></SuspenseWrapper>} />
+              <Route path="borrowings/create" element={<SuspenseWrapper><BorrowingForm /></SuspenseWrapper>} />
+              <Route path="borrowings/:id" element={<SuspenseWrapper><BorrowingDetail /></SuspenseWrapper>} />
+              <Route path="borrowings/:id/return" element={<SuspenseWrapper><ReturnForm /></SuspenseWrapper>} />
+              
+              {/* Reports Routes */}
+              <Route path="reports" element={<SuspenseWrapper><Reports /></SuspenseWrapper>} />
+              
+              {/* Users Routes (Admin Only) */}
+              <Route path="users" element={<SuspenseWrapper><UserList /></SuspenseWrapper>} />
+              <Route path="users/create" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
+              <Route path="users/:id/edit" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
+              
+              {/* Profile Routes */}
+              <Route path="profile" element={<SuspenseWrapper><Profile /></SuspenseWrapper>} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

@@ -150,20 +150,20 @@ function BorrowingList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manajemen Peminjaman</h1>
-          <p className="text-gray-600 mt-1">Kelola peminjaman barang inventaris</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Manajemen Peminjaman</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Kelola peminjaman barang inventaris</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Dual-Mode Toggle */}
-          <div className="inline-flex bg-gray-100 p-1 rounded-lg border border-gray-200 text-xs font-medium">
+          <div className="inline-flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium">
             <button
               type="button"
               onClick={() => handleModeChange('pagination')}
               className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
                 displayMode === 'pagination'
-                  ? 'bg-white text-gray-900 shadow-sm font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm font-semibold'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
               title="Mode Halaman Tradisional"
             >
@@ -177,8 +177,8 @@ function BorrowingList() {
               onClick={() => handleModeChange('infinite')}
               className={`px-3 py-1.5 rounded-md transition-all flex items-center space-x-1.5 ${
                 displayMode === 'infinite'
-                  ? 'bg-white text-blue-600 shadow-sm font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm font-semibold'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
               title="Mode Scroll Otomatis (Infinite Scroll)"
             >
@@ -202,27 +202,27 @@ function BorrowingList() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cari</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cari</label>
             <input
               type="text"
               placeholder="Kode/User/Barang..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Semua Status</option>
               <option value="pending">Pending</option>
@@ -234,83 +234,83 @@ function BorrowingList() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dari Tanggal</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           {/* End Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sampai Tanggal</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Memuat data...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Memuat data...</p>
           </div>
         ) : borrowings.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p className="mt-4 text-gray-600">Tidak ada data peminjaman</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Tidak ada data peminjaman</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-800/60">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peminjam</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barang</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Pinjam</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jatuh Tempo</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl Kembali</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kode</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peminjam</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Barang</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Qty</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tgl Pinjam</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jatuh Tempo</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tgl Kembali</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                   {borrowings.map((borrowing) => (
-                    <tr key={borrowing.id} className="hover:bg-gray-50">
+                    <tr key={borrowing.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{borrowing.code}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{borrowing.code}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{borrowing.user?.name}</div>
-                        <div className="text-sm text-gray-500">{borrowing.user?.email}</div>
+                        <div className="text-sm text-gray-900 dark:text-gray-100">{borrowing.user?.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{borrowing.user?.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{borrowing.item?.name}</div>
-                        <div className="text-sm text-gray-500">{borrowing.item?.code}</div>
+                        <div className="text-sm text-gray-900 dark:text-gray-100">{borrowing.item?.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{borrowing.item?.code}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="text-sm font-medium text-gray-900">{borrowing.quantity}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{borrowing.quantity}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {new Date(borrowing.borrow_date).toLocaleDateString('id-ID')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {new Date(borrowing.due_date).toLocaleDateString('id-ID')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {borrowing.return_date ? new Date(borrowing.return_date).toLocaleDateString('id-ID') : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -321,7 +321,7 @@ function BorrowingList() {
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <Link
                           to={`/borrowings/${borrowing.id}`}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-3"
                           title="Detail"
                         >
                           <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,7 +332,7 @@ function BorrowingList() {
                         {borrowing.status === 'approved' && (
                           <Link
                             to={`/borrowings/${borrowing.id}/return`}
-                            className="text-green-600 hover:text-green-900 mr-3"
+                            className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3"
                             title="Kembalikan"
                           >
                             <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,7 +343,7 @@ function BorrowingList() {
                         {isAdmin && borrowing.status === 'pending' && (
                           <button
                             onClick={() => handleApprove(borrowing.id)}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300"
                             title="Approve"
                           >
                             <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,20 +360,20 @@ function BorrowingList() {
 
             {/* Mode Infinite Scroll: Sentinel / Footer Notice */}
             {displayMode === 'infinite' && (
-              <div className="bg-white px-6 py-4 border-t border-gray-200">
+              <div className="bg-white dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
                 {currentPage < totalPages ? (
                   <div ref={sentinelRef} className="flex flex-col items-center justify-center py-2">
                     {loadingMore ? (
-                      <div className="flex items-center space-x-2 text-blue-600 text-sm font-medium">
-                        <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 text-sm font-medium">
+                        <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
                         <span>Memuat lebih banyak peminjaman...</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400">Gulir ke bawah untuk memuat lebih banyak...</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">Gulir ke bawah untuk memuat lebih banyak...</span>
                     )}
                   </div>
                 ) : (
-                  <p className="text-center text-sm text-gray-500 py-1 font-medium">
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-1 font-medium">
                     Semua peminjaman telah ditampilkan ({borrowings.length} data)
                   </p>
                 )}
@@ -382,23 +382,23 @@ function BorrowingList() {
 
             {/* Mode Pagination: Traditional Numbered Buttons */}
             {displayMode === 'pagination' && totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200">
+              <div className="bg-white dark:bg-gray-900 px-4 py-3 border-t border-gray-200 dark:border-gray-800 sm:px-6">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     Halaman <span className="font-medium">{currentPage}</span> dari <span className="font-medium">{totalPages}</span>
                   </div>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
                       Next
                     </button>
