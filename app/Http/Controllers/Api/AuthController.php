@@ -8,6 +8,7 @@ use App\Models\SecurityAuditLog;
 use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -180,5 +181,62 @@ class AuthController extends Controller
         return response()->json([
             'user' => $request->user(),
         ]);
+    }
+
+    /**
+     * Send password reset link to user email.
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $status = Password::broker()->sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'Tautan reset password telah dikirimkan ke email Anda.',
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Email tidak ditemukan dalam sistem.',
+        ], 422);
+    }
+
+    /**
+     * Reset user password using token.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => ['required', 'string', 'confirmed', new StrongPassword()],
+        ]);
+
+        $status = Password::broker()->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Password Anda berhasil direset. Silakan login kembali.',
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Token reset password tidak valid atau telah kedaluwarsa.',
+        ], 422);
     }
 }
