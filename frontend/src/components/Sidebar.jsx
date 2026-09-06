@@ -66,17 +66,17 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-gray-800 text-white min-h-screen flex flex-col">
+    <div className="w-64 bg-gray-800 dark:bg-gray-900 text-white min-h-screen flex flex-col border-r border-gray-700 dark:border-gray-800 transition-colors">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
         <h1 className="text-xl font-bold">Sistem Inventaris</h1>
         <p className="text-xs text-gray-400 mt-1">Peminjaman Barang</p>
       </div>
 
       {/* User Info */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
             <span className="text-lg font-semibold">{user?.name?.charAt(0)}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -96,7 +96,7 @@ function Sidebar() {
               `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  : 'text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-800 hover:text-white'
               }`
             }
           >
@@ -107,7 +107,7 @@ function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-gray-700 dark:border-gray-800">
         <p className="text-xs text-gray-400 text-center">
           © 2026 Sistem Inventaris
         </p>
