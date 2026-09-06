@@ -55,6 +55,9 @@ class BorrowingStockRaceConditionTest extends TestCase
         $response->assertStatus(201)
             ->assertJson([
                 'message' => 'Borrowing created successfully',
+                'data' => [
+                    'status' => 'pending',
+                ],
             ])
             ->assertJsonStructure([
                 'message',
@@ -68,7 +71,7 @@ class BorrowingStockRaceConditionTest extends TestCase
                 ],
             ]);
 
-        $this->assertEquals(3, $item->fresh()->available_stock);
+        $this->assertEquals(5, $item->fresh()->available_stock);
     }
 
     public function test_blackbox_user_cannot_borrow_more_than_available_stock(): void
@@ -294,27 +297,36 @@ class BorrowingStockRaceConditionTest extends TestCase
             'condition' => 'baik',
         ]);
 
-        // Request 1: Should succeed and decrease stock from 1 to 0
+        // Request 1: Pending borrowing created
         $response1 = $this->postJson('/api/borrowings', [
             'item_id' => $item->id,
             'quantity' => 1,
             'borrow_date' => now()->toDateString(),
             'due_date' => now()->addDays(2)->toDateString(),
         ]);
-
         $response1->assertStatus(201);
+        $borrowing1Id = $response1->json('data.id');
 
-        // Request 2: Must be rejected because stock is now 0
+        // Request 2: Another pending borrowing created
         $response2 = $this->postJson('/api/borrowings', [
             'item_id' => $item->id,
             'quantity' => 1,
             'borrow_date' => now()->toDateString(),
             'due_date' => now()->addDays(2)->toDateString(),
         ]);
+        $response2->assertStatus(201);
+        $borrowing2Id = $response2->json('data.id');
 
-        $response2->assertStatus(422)
+        // Admin approves Request 1: succeeds and decreases stock from 1 to 0
+        $admin = User::factory()->create(['role' => 'admin']);
+        $approve1 = $this->actingAs($admin)->postJson("/api/borrowings/{$borrowing1Id}/approve");
+        $approve1->assertStatus(200);
+
+        // Admin approves Request 2: rejected because stock is now 0
+        $approve2 = $this->actingAs($admin)->postJson("/api/borrowings/{$borrowing2Id}/approve");
+        $approve2->assertStatus(422)
             ->assertJson([
-                'message' => 'Item is not available in requested quantity',
+                'message' => 'Stok barang tidak mencukupi untuk disetujui.',
                 'available_stock' => 0,
             ]);
 
@@ -324,8 +336,8 @@ class BorrowingStockRaceConditionTest extends TestCase
             'available_stock' => 0,
         ]);
 
-        // Only one borrowing should exist in the database
-        $this->assertEquals(1, Borrowing::where('item_id', $item->id)->count());
+        // Only one borrowing has status dipinjam
+        $this->assertEquals(1, Borrowing::where('item_id', $item->id)->where('status', 'dipinjam')->count());
     }
 
     public function test_greybox_simulated_double_return_does_not_inflate_stock(): void
@@ -377,7 +389,7 @@ class BorrowingStockRaceConditionTest extends TestCase
             'condition' => 'baik',
         ]);
 
-        // 1. Borrow 4 items
+        // 1. Borrow 4 items (creates pending borrowing)
         $borrowResponse = $this->postJson('/api/borrowings', [
             'item_id' => $item->id,
             'quantity' => 4,
@@ -387,6 +399,21 @@ class BorrowingStockRaceConditionTest extends TestCase
 
         $borrowResponse->assertStatus(201);
         $borrowingId = $borrowResponse->json('data.id');
+
+        $this->assertDatabaseHas('items', [
+            'id' => $item->id,
+            'available_stock' => 10,
+        ]);
+
+        $this->assertDatabaseHas('borrowings', [
+            'id' => $borrowingId,
+            'status' => 'pending',
+            'quantity' => 4,
+        ]);
+
+        // 1b. Admin approves the borrowing -> stock decreases to 6, status becomes dipinjam
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->postJson("/api/borrowings/{$borrowingId}/approve")->assertStatus(200);
 
         $this->assertDatabaseHas('items', [
             'id' => $item->id,
