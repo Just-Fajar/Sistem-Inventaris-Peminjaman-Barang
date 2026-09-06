@@ -29,6 +29,7 @@ class Borrowing extends Model
         'return_date',
         'status',
         'notes',
+        'rejection_note',
         'approved_by',
         'approved_at',
     ];

@@ -205,8 +205,12 @@ class BorrowingController extends Controller
             ], 403);
         }
 
+        $validated = $request->validate([
+            'rejection_note' => 'nullable|string|max:500',
+        ]);
+
         try {
-            $rejected = $this->borrowingService->rejectBorrowing($borrowing);
+            $rejected = $this->borrowingService->rejectBorrowing($borrowing, $validated['rejection_note'] ?? null);
             $rejected->load(['user', 'item.category', 'approver']);
 
             return (new BorrowingResource($rejected))

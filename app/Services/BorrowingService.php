@@ -149,14 +149,14 @@ class BorrowingService
      *
      * @throws BorrowingException
      */
-    public function rejectBorrowing(Borrowing $borrowing): Borrowing
+    public function rejectBorrowing(Borrowing $borrowing, ?string $rejectionNote = null): Borrowing
     {
         $status = $this->getStatusValue($borrowing);
         if ($borrowing->approved_by !== null || in_array($status, ['approved', 'dipinjam', 'dikembalikan', 'terlambat', 'ditolak', 'rejected'])) {
             throw new BorrowingException('Peminjaman sudah diproses.', 400);
         }
 
-        return DB::transaction(function () use ($borrowing) {
+        return DB::transaction(function () use ($borrowing, $rejectionNote) {
             /** @var Borrowing $lockedBorrowing */
             $lockedBorrowing = Borrowing::lockForUpdate()->findOrFail($borrowing->id);
 
@@ -166,6 +166,7 @@ class BorrowingService
             }
 
             $lockedBorrowing->status = BorrowingStatus::Rejected;
+            $lockedBorrowing->rejection_note = $rejectionNote;
             $lockedBorrowing->save();
 
             $lockedBorrowing->load(['user', 'item', 'approver']);
