@@ -1,8 +1,9 @@
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import ThemeToggle from './common/ThemeToggle';
 
-function Header() {
+function Header({ onToggleSidebar }) {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
@@ -21,17 +22,28 @@ function Header() {
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-xs border-b border-gray-200 dark:border-gray-800 transition-colors">
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between">
-          {/* Breadcrumb / Page Title */}
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          {/* Left: Hamburger (mobile) & Page Title */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="p-2 -ml-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none md:hidden transition-colors"
+              aria-label="Buka menu navigasi"
+              data-testid="hamburger-button"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
               {/* This will be replaced by page-specific title */}
             </h2>
           </div>
 
           {/* Right side - User menu & Theme switcher */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -46,14 +58,14 @@ function Header() {
 
             {/* User dropdown */}
             <div className="relative group">
-              <button className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <button className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-sm font-semibold text-white">
                     {user?.name?.charAt(0)}
                   </span>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{user?.name}</p>
+                <div className="text-left hidden sm:block">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate max-w-30">{user?.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role}</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,5 +128,9 @@ function Header() {
     </header>
   );
 }
+
+Header.propTypes = {
+  onToggleSidebar: PropTypes.func,
+};
 
 export default Header;
