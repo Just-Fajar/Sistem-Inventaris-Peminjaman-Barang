@@ -1,9 +1,16 @@
+import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
 import { authService } from '../services/authService';
 
-function Sidebar() {
+function Sidebar({ isOpen = false, onClose }) {
   const user = authService.getCurrentUser();
   const isAdmin = authService.isAdmin();
+
+  const handleNavClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
 
   const menuItems = [
     {
@@ -66,54 +73,91 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-gray-800 dark:bg-gray-900 text-white min-h-screen flex flex-col border-r border-gray-700 dark:border-gray-800 transition-colors">
-      {/* Logo */}
-      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
-        <h1 className="text-xl font-bold">Sistem Inventaris</h1>
-        <p className="text-xs text-gray-400 mt-1">Peminjaman Barang</p>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-xs transition-opacity"
+          onClick={onClose}
+          aria-hidden="true"
+          data-testid="sidebar-backdrop"
+        />
+      )}
 
-      {/* User Info */}
-      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center">
-            <span className="text-lg font-semibold">{user?.name?.charAt(0)}</span>
+      {/* Sidebar / Off-canvas Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 dark:bg-gray-900 text-white min-h-screen flex flex-col border-r border-gray-700 dark:border-gray-800 transition-transform duration-300 ease-in-out md:static md:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        data-testid="sidebar"
+      >
+        {/* Logo & Mobile Close Button */}
+        <div className="p-4 border-b border-gray-700 dark:border-gray-800 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Sistem Inventaris</h1>
+            <p className="text-xs text-gray-400 mt-1">Peminjaman Barang</p>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 md:hidden transition-colors"
+            aria-label="Tutup menu navigasi"
+            data-testid="sidebar-close-button"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* User Info */}
+        <div className="p-4 border-b border-gray-700 dark:border-gray-800">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gray-600 dark:bg-gray-700 flex items-center justify-center shrink-0">
+              <span className="text-lg font-semibold">{user?.name?.charAt(0)}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-800 hover:text-white'
-              }`
-            }
-          >
-            {item.icon}
-            <span className="font-medium">{item.name}</span>
-          </NavLink>
-        ))}
-      </nav>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={handleNavClick}
+              className={({ isActive }) =>
+                `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-800 hover:text-white'
+                }`
+              }
+            >
+              {item.icon}
+              <span className="font-medium">{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-700 dark:border-gray-800">
-        <p className="text-xs text-gray-400 text-center">
-          © 2026 Sistem Inventaris
-        </p>
-      </div>
-    </div>
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700 dark:border-gray-800">
+          <p className="text-xs text-gray-400 text-center">
+            © 2026 Sistem Inventaris
+          </p>
+        </div>
+      </aside>
+    </>
   );
 }
+
+Sidebar.propTypes = {
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func,
+};
 
 export default Sidebar;
