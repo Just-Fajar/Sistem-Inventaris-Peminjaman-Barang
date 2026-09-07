@@ -12,6 +12,7 @@ services:
     volumes:
       - ./:/var/www
       - /var/www/vendor
+      - /var/www/bootstrap/cache
       - ./docker/nginx/default.conf:/etc/nginx/sites-available/default
       - ./docker/supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
     environment:
@@ -60,7 +61,7 @@ services:
     container_name: inventaris-db
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "${FORWARD_DB_PORT:-3307}:3306"
     environment:
       MYSQL_DATABASE: inventaris
       MYSQL_ROOT_PASSWORD: secret
@@ -96,7 +97,7 @@ services:
     container_name: inventaris-phpmyadmin
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "${FORWARD_PMA_PORT:-8081}:80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306

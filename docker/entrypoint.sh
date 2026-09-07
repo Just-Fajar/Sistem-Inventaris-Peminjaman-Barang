@@ -13,6 +13,9 @@ mkdir -p /var/www/storage/framework/cache/data \
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
+# Remove any stale package or service cache files mounted from host
+rm -f /var/www/bootstrap/cache/*.php
+
 # Wait for database if DB_HOST is set
 if [ -n "$DB_HOST" ] && [ "$DB_CONNECTION" = "mysql" ]; then
     echo "==> Waiting for database at $DB_HOST:${DB_PORT:-3306}..."
