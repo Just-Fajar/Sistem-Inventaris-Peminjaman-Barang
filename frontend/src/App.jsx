@@ -23,10 +23,12 @@ const ReturnForm = lazy(() => import('./pages/ReturnForm'));
 const Reports = lazy(() => import('./pages/Reports'));
 const UserList = lazy(() => import('./pages/UserList'));
 const UserForm = lazy(() => import('./pages/UserForm'));
+const UserDetail = lazy(() => import('./pages/UserDetail'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -90,11 +92,19 @@ function App() {
               {/* Users Routes (Admin Only) */}
               <Route path="users" element={<SuspenseWrapper><UserList /></SuspenseWrapper>} />
               <Route path="users/create" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
+              <Route path="users/:id" element={<SuspenseWrapper><UserDetail /></SuspenseWrapper>} />
               <Route path="users/:id/edit" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
               
-              {/* Profile Routes */}
+              {/* Profile & Settings Routes */}
               <Route path="profile" element={<SuspenseWrapper><Profile /></SuspenseWrapper>} />
+              <Route path="settings" element={<Navigate to="/profile" replace />} />
+
+              {/* Layout 404 Route */}
+              <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
             </Route>
+
+            {/* Global Fallback Route */}
+            <Route path="*" element={<SuspenseWrapper><NotFound /></SuspenseWrapper>} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
