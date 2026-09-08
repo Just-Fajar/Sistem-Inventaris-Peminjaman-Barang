@@ -126,23 +126,28 @@ function BorrowingList() {
   };
 
   const getStatusBadge = (borrowing) => {
-    if (borrowing.status === 'returned') {
-      return 'bg-green-100 text-green-800';
-    } else if (borrowing.is_overdue) {
-      return 'bg-red-100 text-red-800';
-    } else if (borrowing.status === 'pending') {
-      return 'bg-yellow-100 text-yellow-800';
+    const status = borrowing.status;
+    if (status === 'dikembalikan' || status === 'returned') {
+      return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+    } else if (borrowing.is_overdue || status === 'terlambat' || status === 'overdue') {
+      return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+    } else if (status === 'pending') {
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+    } else if (status === 'ditolak' || status === 'rejected') {
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     } else {
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
     }
   };
 
   const getStatusText = (borrowing) => {
-    if (borrowing.status === 'returned') return 'Dikembalikan';
-    if (borrowing.is_overdue) return 'Terlambat';
-    if (borrowing.status === 'pending') return 'Pending';
-    if (borrowing.status === 'approved') return 'Dipinjam';
-    return borrowing.status;
+    const status = borrowing.status;
+    if (status === 'dikembalikan' || status === 'returned') return 'Dikembalikan';
+    if (borrowing.is_overdue || status === 'terlambat' || status === 'overdue') return 'Terlambat';
+    if (status === 'pending') return 'Pending';
+    if (status === 'dipinjam' || status === 'approved') return 'Dipinjam';
+    if (status === 'ditolak' || status === 'rejected') return 'Ditolak';
+    return status;
   };
 
   return (
@@ -226,9 +231,10 @@ function BorrowingList() {
             >
               <option value="">Semua Status</option>
               <option value="pending">Pending</option>
-              <option value="approved">Dipinjam</option>
-              <option value="returned">Dikembalikan</option>
-              <option value="overdue">Terlambat</option>
+              <option value="dipinjam">Dipinjam</option>
+              <option value="dikembalikan">Dikembalikan</option>
+              <option value="terlambat">Terlambat</option>
+              <option value="ditolak">Ditolak</option>
             </select>
           </div>
 
@@ -329,7 +335,7 @@ function BorrowingList() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </Link>
-                        {borrowing.status === 'approved' && (
+                        {(borrowing.status === 'dipinjam' || borrowing.status === 'approved') && (
                           <Link
                             to={`/borrowings/${borrowing.id}/return`}
                             className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3"

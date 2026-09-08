@@ -55,10 +55,10 @@ $registerApiRoutes = function () {
 
         // Borrowings
         Route::apiResource('borrowings', BorrowingController::class);
-        Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
+        Route::match(['post', 'put'], '/borrowings/{borrowing}/return', [BorrowingController::class, 'return']);
         Route::match(['post', 'put'], '/borrowings/{borrowing}/approve', [BorrowingController::class, 'approve']);
         Route::match(['post', 'put'], '/borrowings/{borrowing}/reject', [BorrowingController::class, 'reject']);
-        Route::post('/borrowings/{borrowing}/extend', [BorrowingController::class, 'extend']);
+        Route::match(['post', 'put'], '/borrowings/{borrowing}/extend', [BorrowingController::class, 'extend']);
         Route::get('/borrowings/my/list', [BorrowingController::class, 'myBorrowings']);
 
         // Reports

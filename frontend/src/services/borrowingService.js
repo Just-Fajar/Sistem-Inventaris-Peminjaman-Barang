@@ -3,7 +3,10 @@ import api from './api';
 export const borrowingService = {
   // Get all borrowings
   getAll: async (params = {}) => {
-    const response = await api.get('/borrowings', { params });
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    );
+    const response = await api.get('/borrowings', { params: cleanedParams });
     return response.data;
   },
 

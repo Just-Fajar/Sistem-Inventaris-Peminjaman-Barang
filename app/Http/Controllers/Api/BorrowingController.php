@@ -30,7 +30,7 @@ class BorrowingController extends Controller
         $query = Borrowing::with(['user', 'item', 'approver']);
 
         // Search by code, user name, or item name
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('borrow_code', 'like', "%{$search}%")
@@ -46,32 +46,58 @@ class BorrowingController extends Controller
         }
 
         // Filter by multiple statuses
-        if ($request->has('statuses') && is_array($request->statuses)) {
-            $query->whereIn('status', $request->statuses);
+        if ($request->filled('statuses') && is_array($request->statuses)) {
+            $statuses = array_map(fn ($s) => match ($s) {
+                'returned' => 'dikembalikan',
+                'approved' => 'dipinjam',
+                'rejected' => 'ditolak',
+                default => $s,
+            }, $request->statuses);
+            $query->whereIn('status', $statuses);
         }
         // Single status filter (backward compatibility)
-        elseif ($request->has('status')) {
-            $query->where('status', $request->status);
+        elseif ($request->filled('status')) {
+            $status = match ($request->status) {
+                'returned' => 'dikembalikan',
+                'approved' => 'dipinjam',
+                'rejected' => 'ditolak',
+                default => $request->status,
+            };
+            $query->where('status', $status);
         }
 
         // Filter by user (for staff to see their own borrowings)
-        if ($request->has('user_id')) {
+        if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
 
         // Filter by item
-        if ($request->has('item_id')) {
+        if ($request->filled('item_id')) {
             $query->where('item_id', $request->item_id);
         }
 
-        // Filter by borrow date range
-        if ($request->has('borrow_start') && $request->has('borrow_end')) {
-            $query->whereBetween('borrow_date', [$request->borrow_start, $request->borrow_end]);
+        // Filter by borrow date range (support borrow_start/borrow_end and start_date/end_date)
+        $borrowStart = $request->input('borrow_start', $request->input('start_date'));
+        $borrowEnd = $request->input('borrow_end', $request->input('end_date'));
+
+        if (!empty($borrowStart) && !empty($borrowEnd)) {
+            $query->whereBetween('borrow_date', [$borrowStart, $borrowEnd]);
+        } elseif (!empty($borrowStart)) {
+            $query->whereDate('borrow_date', '>=', $borrowStart);
+        } elseif (!empty($borrowEnd)) {
+            $query->whereDate('borrow_date', '<=', $borrowEnd);
         }
 
         // Filter by due date range
-        if ($request->has('due_start') && $request->has('due_end')) {
-            $query->whereBetween('due_date', [$request->due_start, $request->due_end]);
+        $dueStart = $request->input('due_start');
+        $dueEnd = $request->input('due_end');
+
+        if (!empty($dueStart) && !empty($dueEnd)) {
+            $query->whereBetween('due_date', [$dueStart, $dueEnd]);
+        } elseif (!empty($dueStart)) {
+            $query->whereDate('due_date', '>=', $dueStart);
+        } elseif (!empty($dueEnd)) {
+            $query->whereDate('due_date', '<=', $dueEnd);
         }
 
         // Filter overdue only
@@ -311,8 +337,14 @@ class BorrowingController extends Controller
             ->where('user_id', $request->user()->id);
 
         // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('status')) {
+            $status = match ($request->status) {
+                'returned' => 'dikembalikan',
+                'approved' => 'dipinjam',
+                'rejected' => 'ditolak',
+                default => $request->status,
+            };
+            $query->where('status', $status);
         }
 
         $borrowings = $query->latest()->paginate($request->per_page ?? 15);
