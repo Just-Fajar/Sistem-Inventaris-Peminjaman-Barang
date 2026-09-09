@@ -80,93 +80,93 @@ function UserForm() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit User' : 'Tambah User'}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {isEdit ? 'Perbarui informasi user' : 'Tambahkan user baru ke sistem'}
         </p>
       </div>
 
       <div className="max-w-2xl">
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nama Lengkap <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 {...register('name')}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                 }`}
                 placeholder="John Doe"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
+              {errors.name && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.name.message}</p>}
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 {...register('email')}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                 }`}
                 placeholder="john@example.com"
               />
-              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Password {!isEdit && <span className="text-red-500">*</span>}
-                {isEdit && <span className="text-gray-500 text-xs">(Kosongkan jika tidak ingin mengubah)</span>}
+                {isEdit && <span className="text-gray-500 dark:text-gray-400 text-xs ml-1">(Kosongkan jika tidak ingin mengubah)</span>}
               </label>
               <input
                 type="password"
                 {...register('password')}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.password ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                 }`}
                 placeholder="Minimal 8 karakter"
               />
-              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
+              {errors.password && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.password.message}</p>}
             </div>
 
             {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Role <span className="text-red-500">*</span>
               </label>
               <select
                 {...register('role')}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.role ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.role ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                 }`}
               >
                 <option value="">Pilih role...</option>
                 <option value="admin">Admin</option>
                 <option value="staff">Staff</option>
               </select>
-              {errors.role && <p className="mt-1 text-sm text-red-500">{errors.role.message}</p>}
+              {errors.role && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.role.message}</p>}
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4">
               <div className="flex">
-                <svg className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Role Permissions</h3>
-                  <div className="mt-2 text-sm text-blue-700">
+                  <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Role Permissions</h3>
+                  <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
                     <ul className="list-disc list-inside space-y-1">
                       <li><strong>Admin:</strong> Full access, dapat manage users dan approve peminjaman</li>
                       <li><strong>Staff:</strong> Dapat manage items, categories, dan borrowings</li>
@@ -182,7 +182,7 @@ function UserForm() {
                 type="button"
                 onClick={() => navigate('/users')}
                 disabled={submitting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
               >
                 Batal
               </button>

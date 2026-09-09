@@ -96,24 +96,24 @@ function Profile() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-600 mt-1">Kelola informasi pribadi Anda</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Kelola informasi pribadi Anda</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
             <div className="text-center mb-6">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl font-bold text-blue-600">
+              <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                   {user?.name.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{user?.name}</h3>
-              <p className="text-sm text-gray-600">{user?.email}</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{user?.name}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email}</p>
               <span className={`inline-block px-3 py-1 mt-2 text-xs font-semibold rounded-full ${
-                user?.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                user?.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
               }`}>
                 {user?.role}
               </span>
@@ -122,20 +122,20 @@ function Profile() {
             <div className="space-y-2">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`w-full text-left px-4 py-2 rounded-lg ${
+                className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                   activeTab === 'profile'
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
                 Edit Profile
               </button>
               <button
                 onClick={() => setActiveTab('password')}
-                className={`w-full text-left px-4 py-2 rounded-lg ${
+                className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
                   activeTab === 'password'
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
                 Ganti Password
@@ -146,40 +146,40 @@ function Profile() {
 
         {/* Content */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
             {activeTab === 'profile' ? (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Edit Profile</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Edit Profile</h2>
                 <form onSubmit={profileForm.handleSubmit(onSubmitProfile)} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Nama Lengkap <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       {...profileForm.register('name')}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        profileForm.formState.errors.name ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        profileForm.formState.errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                       }`}
                     />
                     {profileForm.formState.errors.name && (
-                      <p className="mt-1 text-sm text-red-500">{profileForm.formState.errors.name.message}</p>
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{profileForm.formState.errors.name.message}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       {...profileForm.register('email')}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        profileForm.formState.errors.email ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        profileForm.formState.errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                       }`}
                     />
                     {profileForm.formState.errors.email && (
-                      <p className="mt-1 text-sm text-red-500">{profileForm.formState.errors.email.message}</p>
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{profileForm.formState.errors.email.message}</p>
                     )}
                   </div>
 
@@ -197,53 +197,53 @@ function Profile() {
               </div>
             ) : (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Ganti Password</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Ganti Password</h2>
                 <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Password Lama <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
                       {...passwordForm.register('current_password')}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        passwordForm.formState.errors.current_password ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        passwordForm.formState.errors.current_password ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                       }`}
                     />
                     {passwordForm.formState.errors.current_password && (
-                      <p className="mt-1 text-sm text-red-500">{passwordForm.formState.errors.current_password.message}</p>
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{passwordForm.formState.errors.current_password.message}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Password Baru <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
                       {...passwordForm.register('password')}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        passwordForm.formState.errors.password ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        passwordForm.formState.errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                       }`}
                     />
                     {passwordForm.formState.errors.password && (
-                      <p className="mt-1 text-sm text-red-500">{passwordForm.formState.errors.password.message}</p>
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{passwordForm.formState.errors.password.message}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Konfirmasi Password Baru <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
                       {...passwordForm.register('password_confirmation')}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                        passwordForm.formState.errors.password_confirmation ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        passwordForm.formState.errors.password_confirmation ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                       }`}
                     />
                     {passwordForm.formState.errors.password_confirmation && (
-                      <p className="mt-1 text-sm text-red-500">{passwordForm.formState.errors.password_confirmation.message}</p>
+                      <p className="mt-1 text-sm text-red-500 dark:text-red-400">{passwordForm.formState.errors.password_confirmation.message}</p>
                     )}
                   </div>
 

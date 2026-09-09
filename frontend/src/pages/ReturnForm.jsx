@@ -45,51 +45,51 @@ function ReturnForm() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Kembalikan Barang</h1>
-        <p className="text-gray-600 mt-1">Proses pengembalian barang peminjaman</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Kembalikan Barang</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Proses pengembalian barang peminjaman</p>
       </div>
 
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Return Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Tanggal Pengembalian <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 {...register('return_date')}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.return_date ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.return_date ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
                 }`}
               />
-              {errors.return_date && <p className="mt-1 text-sm text-red-500">{errors.return_date.message}</p>}
-              <p className="mt-1 text-sm text-gray-500">
+              {errors.return_date && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.return_date.message}</p>}
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Sistem akan otomatis mendeteksi jika pengembalian terlambat
               </p>
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Catatan Pengembalian</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan Pengembalian</label>
               <textarea
                 {...register('notes')}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Kondisi barang saat dikembalikan, catatan tambahan, dll (opsional)"
               />
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-lg p-4">
               <div className="flex">
-                <svg className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Informasi</h3>
-                  <div className="mt-2 text-sm text-blue-700">
+                  <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300">Informasi</h3>
+                  <div className="mt-2 text-sm text-blue-700 dark:text-blue-400">
                     <ul className="list-disc list-inside space-y-1">
                       <li>Stok barang akan otomatis bertambah sesuai jumlah yang dipinjam</li>
                       <li>Status peminjaman akan berubah menjadi "Dikembalikan"</li>
@@ -106,7 +106,7 @@ function ReturnForm() {
                 type="button"
                 onClick={() => navigate(`/borrowings/${id}`)}
                 disabled={submitting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
               >
                 Batal
               </button>
