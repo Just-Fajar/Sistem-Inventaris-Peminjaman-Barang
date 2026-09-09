@@ -148,42 +148,42 @@ function ItemForm() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {isEdit ? 'Edit Barang' : 'Tambah Barang Baru'}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {isEdit ? 'Update informasi barang' : 'Tambahkan barang baru ke inventaris'}
         </p>
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nama Barang <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 {...register('name', { required: 'Nama barang wajib diisi' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Contoh: Laptop Dell Latitude"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
               )}
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Kategori <span className="text-red-500">*</span>
               </label>
               <select
                 {...register('category_id', { required: 'Kategori wajib dipilih' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Kategori</option>
                 {categories.map((cat) => (
@@ -193,13 +193,13 @@ function ItemForm() {
                 ))}
               </select>
               {errors.category_id && (
-                <p className="mt-1 text-sm text-red-600">{errors.category_id.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.category_id.message}</p>
               )}
             </div>
 
             {/* Stock */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Jumlah Stok <span className="text-red-500">*</span>
               </label>
               <input
@@ -208,22 +208,22 @@ function ItemForm() {
                   required: 'Stok wajib diisi',
                   min: { value: 0, message: 'Stok minimal 0' },
                 })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0"
               />
               {errors.stock && (
-                <p className="mt-1 text-sm text-red-600">{errors.stock.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.stock.message}</p>
               )}
             </div>
 
             {/* Condition */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Kondisi <span className="text-red-500">*</span>
               </label>
               <select
                 {...register('condition', { required: 'Kondisi wajib dipilih' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Pilih Kondisi</option>
                 <option value="baik">Baik</option>
@@ -231,27 +231,27 @@ function ItemForm() {
                 <option value="hilang">Hilang</option>
               </select>
               {errors.condition && (
-                <p className="mt-1 text-sm text-red-600">{errors.condition.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.condition.message}</p>
               )}
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Deskripsi
             </label>
             <textarea
               {...register('description')}
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Deskripsi barang (optional)"
             />
           </div>
 
           {/* Image Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Gambar Barang
             </label>
             <div className="flex items-start space-x-4">
@@ -263,8 +263,8 @@ function ItemForm() {
                   onDrop={handleDrop}
                   className={`relative border-2 border-dashed rounded-lg p-6 transition-colors ${
                     dragActive
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 bg-gray-50'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40'
+                      : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
                   }`}
                 >
                   <input
@@ -276,7 +276,7 @@ function ItemForm() {
                   />
                   <div className="text-center">
                     <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
+                      className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
                       stroke="currentColor"
                       fill="none"
                       viewBox="0 0 48 48"
@@ -292,13 +292,13 @@ function ItemForm() {
                     <div className="mt-2">
                       <label
                         htmlFor="image-upload"
-                        className="cursor-pointer text-blue-600 hover:text-blue-500 font-medium"
+                        className="cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium"
                       >
                         Upload file
                       </label>
-                      <span className="text-gray-600"> atau drag and drop</span>
+                      <span className="text-gray-600 dark:text-gray-400"> atau drag and drop</span>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       JPG, JPEG, PNG hingga 2MB
                     </p>
                   </div>
@@ -310,7 +310,7 @@ function ItemForm() {
                     <img
                       src={imagePreview}
                       alt="Preview"
-                      className="h-32 w-32 object-cover rounded-lg border-2 border-gray-300"
+                      className="h-32 w-32 object-cover rounded-lg border-2 border-gray-300 dark:border-gray-700"
                     />
                     <button
                       type="button"
@@ -339,11 +339,11 @@ function ItemForm() {
           </div>
 
           {/* Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-800">
             <button
               type="button"
               onClick={() => navigate('/items')}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               Batal
             </button>

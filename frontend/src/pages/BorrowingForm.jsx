@@ -83,24 +83,24 @@ function BorrowingForm() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Pinjam Barang</h1>
-        <p className="text-gray-600 mt-1">Ajukan peminjaman barang inventaris</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pinjam Barang</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">Ajukan peminjaman barang inventaris</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Item Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Pilih Barang <span className="text-red-500">*</span>
                 </label>
                 <select
                   {...register('item_id')}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.item_id ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    errors.item_id ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'
                   }`}
                 >
                   <option value="">Pilih barang...</option>
@@ -110,26 +110,26 @@ function BorrowingForm() {
                     </option>
                   ))}
                 </select>
-                {errors.item_id && <p className="mt-1 text-sm text-red-500">{errors.item_id.message}</p>}
+                {errors.item_id && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.item_id.message}</p>}
               </div>
 
               {/* Quantity */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Jumlah <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
                   {...register('quantity')}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.quantity ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 ${
+                    errors.quantity ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'
                   }`}
                   placeholder="Masukkan jumlah"
                   min="1"
                 />
-                {errors.quantity && <p className="mt-1 text-sm text-red-500">{errors.quantity.message}</p>}
+                {errors.quantity && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.quantity.message}</p>}
                 {selectedItem && quantity > selectedItem.available_stock && (
-                  <p className="mt-1 text-sm text-red-500">
+                  <p className="mt-1 text-sm text-red-500 dark:text-red-400">
                     Stok tidak mencukupi. Tersedia: {selectedItem.available_stock}
                   </p>
                 )}
@@ -137,52 +137,52 @@ function BorrowingForm() {
 
               {/* Borrow Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Tanggal Pinjam <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
                   {...register('borrow_date')}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.borrow_date ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    errors.borrow_date ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'
                   }`}
                 />
-                {errors.borrow_date && <p className="mt-1 text-sm text-red-500">{errors.borrow_date.message}</p>}
+                {errors.borrow_date && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.borrow_date.message}</p>}
               </div>
 
               {/* Due Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Tanggal Jatuh Tempo <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
                   {...register('due_date')}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.due_date ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 ${
+                    errors.due_date ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'
                   }`}
                 />
-                {errors.due_date && <p className="mt-1 text-sm text-red-500">{errors.due_date.message}</p>}
+                {errors.due_date && <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.due_date.message}</p>}
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
                 <textarea
                   {...register('notes')}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Catatan tambahan (opsional)"
                 />
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => navigate('/borrowings')}
                   disabled={submitting}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
                   Batal
                 </button>
@@ -202,8 +202,8 @@ function BorrowingForm() {
         {/* Item Info Sidebar */}
         <div>
           {selectedItem && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Info Barang</h3>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Info Barang</h3>
               
               {selectedItem.image && (
                 <img
@@ -215,32 +215,32 @@ function BorrowingForm() {
 
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-500">Nama Barang</p>
-                  <p className="text-base font-medium text-gray-900">{selectedItem.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Nama Barang</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-gray-100">{selectedItem.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Kode</p>
-                  <p className="text-base font-medium text-gray-900">{selectedItem.code}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Kode</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-gray-100">{selectedItem.code}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Kategori</p>
-                  <p className="text-base font-medium text-gray-900">{selectedItem.category?.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Kategori</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-gray-100">{selectedItem.category?.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Kondisi</p>
-                  <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Kondisi</p>
+                  <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                     {selectedItem.condition}
                   </span>
                 </div>
-                <div className="pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-800">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Total Stok</p>
-                      <p className="text-2xl font-bold text-blue-600">{selectedItem.stock}</p>
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Stok</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{selectedItem.stock}</p>
                     </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-gray-600">Tersedia</p>
-                      <p className="text-2xl font-bold text-green-600">{selectedItem.available_stock}</p>
+                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/40 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Tersedia</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedItem.available_stock}</p>
                     </div>
                   </div>
                 </div>

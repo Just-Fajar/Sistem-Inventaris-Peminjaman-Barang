@@ -40,10 +40,10 @@ function BorrowingDetail() {
 
   const getStatusBadge = () => {
     if (!borrowing) return '';
-    if (borrowing.status === 'returned') return 'bg-green-100 text-green-800';
-    if (borrowing.is_overdue) return 'bg-red-100 text-red-800';
-    if (borrowing.status === 'pending') return 'bg-yellow-100 text-yellow-800';
-    return 'bg-blue-100 text-blue-800';
+    if (borrowing.status === 'returned') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
+    if (borrowing.is_overdue) return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
+    if (borrowing.status === 'pending') return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300';
+    return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
   };
 
   const getStatusText = () => {
@@ -60,7 +60,7 @@ function BorrowingDetail() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Memuat data...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Memuat data...</p>
         </div>
       </div>
     );
@@ -74,15 +74,15 @@ function BorrowingDetail() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
-          <Link to="/borrowings" className="hover:text-blue-600">Manajemen Peminjaman</Link>
+        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <Link to="/borrowings" className="hover:text-blue-600 dark:hover:text-blue-400">Manajemen Peminjaman</Link>
           <span>/</span>
-          <span className="text-gray-900">Detail Peminjaman</span>
+          <span className="text-gray-900 dark:text-gray-100">Detail Peminjaman</span>
         </div>
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Detail Peminjaman</h1>
-            <p className="text-gray-600 mt-1">Kode: {borrowing.code}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Detail Peminjaman</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Kode: {borrowing.code}</p>
           </div>
           <div className="flex space-x-3">
             {borrowing.status === 'approved' && (
@@ -115,9 +115,9 @@ function BorrowingDetail() {
         {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status & Timeline */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Status Peminjaman</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Status Peminjaman</h2>
               <span className={`px-4 py-2 text-sm font-semibold rounded-full ${getStatusBadge()}`}>
                 {getStatusText()}
               </span>
@@ -125,14 +125,14 @@ function BorrowingDetail() {
 
             <div className="space-y-4">
               <div className="flex items-start">
-                <div className="shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div className="ml-4 flex-1">
-                  <p className="text-sm font-medium text-gray-900">Tanggal Pinjam</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Tanggal Pinjam</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {new Date(borrowing.borrow_date).toLocaleDateString('id-ID', {
                       weekday: 'long',
                       year: 'numeric',
@@ -145,15 +145,15 @@ function BorrowingDetail() {
 
               <div className="flex items-start">
                 <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                  borrowing.is_overdue ? 'bg-red-100' : 'bg-orange-100'
+                  borrowing.is_overdue ? 'bg-red-100 dark:bg-red-900/30' : 'bg-orange-100 dark:bg-orange-900/30'
                 }`}>
-                  <svg className={`w-5 h-5 ${borrowing.is_overdue ? 'text-red-600' : 'text-orange-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-5 h-5 ${borrowing.is_overdue ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div className="ml-4 flex-1">
-                  <p className="text-sm font-medium text-gray-900">Tanggal Jatuh Tempo</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Tanggal Jatuh Tempo</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {new Date(borrowing.due_date).toLocaleDateString('id-ID', {
                       weekday: 'long',
                       year: 'numeric',
@@ -162,21 +162,21 @@ function BorrowingDetail() {
                     })}
                   </p>
                   {borrowing.is_overdue && (
-                    <p className="text-sm text-red-600 font-medium mt-1">⚠ Terlambat</p>
+                    <p className="text-sm text-red-600 dark:text-red-400 font-medium mt-1">Terlambat</p>
                   )}
                 </div>
               </div>
 
               {borrowing.return_date && (
                 <div className="flex items-start">
-                  <div className="shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div className="ml-4 flex-1">
-                    <p className="text-sm font-medium text-gray-900">Tanggal Pengembalian</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Tanggal Pengembalian</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {new Date(borrowing.return_date).toLocaleDateString('id-ID', {
                         weekday: 'long',
                         year: 'numeric',
@@ -191,33 +191,33 @@ function BorrowingDetail() {
           </div>
 
           {/* Item Details */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Detail Barang</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Detail Barang</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Nama Barang</p>
-                <p className="text-base font-medium text-gray-900 mt-1">{borrowing.item?.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Nama Barang</p>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{borrowing.item?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Kode Barang</p>
-                <p className="text-base font-medium text-gray-900 mt-1">{borrowing.item?.code}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Kode Barang</p>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{borrowing.item?.code}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Kategori</p>
-                <p className="text-base font-medium text-gray-900 mt-1">{borrowing.item?.category?.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Kategori</p>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{borrowing.item?.category?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Jumlah Dipinjam</p>
-                <p className="text-base font-medium text-gray-900 mt-1">{borrowing.quantity} unit</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Jumlah Dipinjam</p>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{borrowing.quantity} unit</p>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           {borrowing.notes && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Catatan</h2>
-              <p className="text-gray-700">{borrowing.notes}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Catatan</h2>
+              <p className="text-gray-700 dark:text-gray-300">{borrowing.notes}</p>
             </div>
           )}
         </div>
@@ -225,20 +225,20 @@ function BorrowingDetail() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* User Info */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Peminjam</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Peminjam</h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">Nama</p>
-                <p className="text-base font-medium text-gray-900 mt-1">{borrowing.user?.name}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Nama</p>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{borrowing.user?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="text-base text-gray-900 mt-1">{borrowing.user?.email}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                <p className="text-base text-gray-900 dark:text-gray-100 mt-1">{borrowing.user?.email}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Role</p>
-                <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Role</p>
+                <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 mt-1">
                   {borrowing.user?.role}
                 </span>
               </div>
@@ -247,23 +247,23 @@ function BorrowingDetail() {
 
           {/* Item Image */}
           {borrowing.item?.image && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto Barang</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Foto Barang</h2>
               <img
                 src={`http://localhost:8000/storage/${borrowing.item.image}`}
                 alt={borrowing.item.name}
-                className="w-full h-auto rounded-lg"
+                className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700"
               />
             </div>
           )}
 
           {/* Meta Info */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Info Tambahan</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Info Tambahan</h2>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-500">Dibuat</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Dibuat</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
                   {new Date(borrowing.created_at).toLocaleDateString('id-ID', {
                     year: 'numeric',
                     month: 'long',
@@ -273,8 +273,8 @@ function BorrowingDetail() {
               </div>
               {borrowing.updated_at !== borrowing.created_at && (
                 <div>
-                  <p className="text-sm text-gray-500">Terakhir Diupdate</p>
-                  <p className="text-sm font-medium text-gray-900 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Terakhir Diupdate</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
                     {new Date(borrowing.updated_at).toLocaleDateString('id-ID', {
                       year: 'numeric',
                       month: 'long',

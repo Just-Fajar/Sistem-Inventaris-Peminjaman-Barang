@@ -31,137 +31,129 @@ function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold">Sistem Inventaris</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                {user?.name} ({user?.role})
-              </span>
-              <button
-                onClick={() => {
-                  authService.logout();
-                  window.location.href = '/login';
-                }}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Logout
-              </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
+          Ringkasan aktivitas dan inventaris barang
+        </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg p-5">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                Total Barang
+              </dt>
+              <dd className="mt-1 text-3xl font-semibold text-gray-900 dark:text-gray-100">
+                {data?.items?.total || 0}
+              </dd>
             </div>
           </div>
         </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Dashboard</h2>
-
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Barang
-                    </dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                      {data?.items?.total || 0}
-                    </dd>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Barang Tersedia
-                    </dt>
-                    <dd className="mt-1 text-3xl font-semibold text-green-600">
-                      {data?.items?.available || 0}
-                    </dd>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Sedang Dipinjam
-                    </dt>
-                    <dd className="mt-1 text-3xl font-semibold text-blue-600">
-                      {data?.borrowings?.active || 0}
-                    </dd>
-                  </div>
-                </div>
-              </div>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg p-5">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                Barang Tersedia
+              </dt>
+              <dd className="mt-1 text-3xl font-semibold text-green-600 dark:text-green-400">
+                {data?.items?.available || 0}
+              </dd>
             </div>
           </div>
+        </div>
 
-          {/* Recent Borrowings */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Peminjaman Terbaru
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Kode
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Barang
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Status
-                    </th>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg p-5">
+          <div className="flex items-center">
+            <div className="flex-1">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                Sedang Dipinjam
+              </dt>
+              <dd className="mt-1 text-3xl font-semibold text-blue-600 dark:text-blue-400">
+                {data?.borrowings?.active || 0}
+              </dd>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Borrowings */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          Peminjaman Terbaru
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Kode
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Barang
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+              {data?.recent_borrowings && data.recent_borrowings.length > 0 ? (
+                data.recent_borrowings.map((borrowing) => (
+                  <tr key={borrowing.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {borrowing.borrow_code || borrowing.code}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {borrowing.item?.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {borrowing.user?.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          borrowing.status === 'dipinjam' || borrowing.status === 'approved'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'
+                            : borrowing.status === 'terlambat' || borrowing.is_overdue
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+                            : borrowing.status === 'dikembalikan' || borrowing.status === 'returned'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                            : borrowing.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                        }`}
+                      >
+                        {borrowing.status === 'dipinjam' || borrowing.status === 'approved'
+                          ? 'Dipinjam'
+                          : borrowing.status === 'terlambat' || borrowing.is_overdue
+                          ? 'Terlambat'
+                          : borrowing.status === 'dikembalikan' || borrowing.status === 'returned'
+                          ? 'Dikembalikan'
+                          : borrowing.status === 'pending'
+                          ? 'Pending'
+                          : borrowing.status}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {data?.recent_borrowings?.map((borrowing) => (
-                    <tr key={borrowing.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {borrowing.borrow_code}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {borrowing.item?.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {borrowing.user?.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            borrowing.status === 'dipinjam'
-                              ? 'bg-blue-100 text-blue-800'
-                              : borrowing.status === 'terlambat'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {borrowing.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    Belum ada riwayat peminjaman terbaru.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
