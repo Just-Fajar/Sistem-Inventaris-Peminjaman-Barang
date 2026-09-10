@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { authService } from '../services/authService';
 import { categoryService } from '../services/categoryService';
 import { itemService } from '../services/itemService';
 
 function ItemList() {
+  const isAdmin = authService.isAdmin();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -186,15 +188,17 @@ function ItemList() {
             </button>
           </div>
 
-          <Link
-            to="/items/create"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 text-sm font-medium shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Tambah Barang</span>
-          </Link>
+          {isAdmin && (
+            <Link
+              to="/items/create"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 text-sm font-medium shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Tambah Barang</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -322,18 +326,22 @@ function ItemList() {
                         >
                           Detail
                         </Link>
-                        <Link
-                          to={`/items/${item.id}/edit`}
-                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                        >
-                          Hapus
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <Link
+                              to={`/items/${item.id}/edit`}
+                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                            >
+                              Hapus
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

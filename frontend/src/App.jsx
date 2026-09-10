@@ -38,6 +38,14 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Admin Route Component
+function AdminRoute({ children }) {
+  if (!authService.isAdmin()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
 // Suspense wrapper for lazy loaded routes
 function SuspenseWrapper({ children }) {
   return (
@@ -73,9 +81,23 @@ function App() {
               
               {/* Items Routes */}
               <Route path="items" element={<SuspenseWrapper><ItemList /></SuspenseWrapper>} />
-              <Route path="items/create" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
+              <Route
+                path="items/create"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><ItemForm /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
               <Route path="items/:id" element={<SuspenseWrapper><ItemDetail /></SuspenseWrapper>} />
-              <Route path="items/:id/edit" element={<SuspenseWrapper><ItemForm /></SuspenseWrapper>} />
+              <Route
+                path="items/:id/edit"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><ItemForm /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
               
               {/* Categories Routes */}
               <Route path="categories" element={<SuspenseWrapper><CategoryList /></SuspenseWrapper>} />
@@ -90,10 +112,38 @@ function App() {
               <Route path="reports" element={<SuspenseWrapper><Reports /></SuspenseWrapper>} />
               
               {/* Users Routes (Admin Only) */}
-              <Route path="users" element={<SuspenseWrapper><UserList /></SuspenseWrapper>} />
-              <Route path="users/create" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
-              <Route path="users/:id" element={<SuspenseWrapper><UserDetail /></SuspenseWrapper>} />
-              <Route path="users/:id/edit" element={<SuspenseWrapper><UserForm /></SuspenseWrapper>} />
+              <Route
+                path="users"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><UserList /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="users/create"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><UserForm /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="users/:id"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><UserDetail /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="users/:id/edit"
+                element={
+                  <AdminRoute>
+                    <SuspenseWrapper><UserForm /></SuspenseWrapper>
+                  </AdminRoute>
+                }
+              />
               
               {/* Profile & Settings Routes */}
               <Route path="profile" element={<SuspenseWrapper><Profile /></SuspenseWrapper>} />
