@@ -209,6 +209,7 @@ function ItemList() {
           <div className="sm:col-span-2">
             <input
               type="text"
+              aria-label="Cari barang berdasarkan nama atau kode"
               placeholder="Cari berdasarkan nama atau kode..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -219,6 +220,7 @@ function ItemList() {
           {/* Category Filter */}
           <div>
             <select
+              aria-label="Filter Kategori"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -235,6 +237,7 @@ function ItemList() {
           {/* Condition Filter */}
           <div>
             <select
+              aria-label="Filter Kondisi"
               value={conditionFilter}
               onChange={(e) => setConditionFilter(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -402,6 +405,7 @@ function ItemList() {
                       <button
                         onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
+                        aria-label="Halaman sebelumnya"
                         className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                       >
                         <span className="sr-only">Previous</span>
@@ -425,6 +429,7 @@ function ItemList() {
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
+                        aria-label="Halaman berikutnya"
                         className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
                       >
                         <span className="sr-only">Next</span>

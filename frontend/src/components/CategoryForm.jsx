@@ -62,7 +62,9 @@ function CategoryForm({ category, onClose, onSuccess }) {
             {isEdit ? 'Edit Kategori' : 'Tambah Kategori'}
           </h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Tutup modal"
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             disabled={submitting}
           >
