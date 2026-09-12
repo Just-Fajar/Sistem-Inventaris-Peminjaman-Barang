@@ -8,10 +8,12 @@
   <img src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
   <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
   <img src="https://img.shields.io/badge/Redis-Cache_%26_Queue-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis">
+  <img src="https://img.shields.io/badge/PWA-Ready-10B981?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA Ready">
+  <img src="https://img.shields.io/badge/Lighthouse-100%25_A11y_%26_SEO-059669?style=for-the-badge&logo=lighthouse&logoColor=white" alt="Lighthouse 100%">
 </p>
 
 <p align="center">
-  <strong>Sistem informasi manajemen inventaris dan alur peminjaman barang berbasis web dengan arsitektur RESTful API modern, aman, responsif, dan berperforma tinggi.</strong>
+  <strong>Sistem informasi manajemen inventaris dan alur peminjaman barang berbasis web dengan arsitektur RESTful API modern, aman, responsif, aksesibel, dan berkinerja tinggi.</strong>
 </p>
 
 ---
@@ -20,6 +22,7 @@
 
 - [Ikhtisar Arsitektur](#ikhtisar-arsitektur)
 - [Fitur Utama](#fitur-utama)
+- [Kontrol Akses Berbasis Peran (RBAC)](#kontrol-akses-berbasis-peran-rbac)
 - [Peningkatan Keamanan](#peningkatan-keamanan)
 - [Panduan Instalasi Lokal](#panduan-instalasi-lokal)
 - [Panduan Docker untuk Pengembangan Lokal](#panduan-docker-untuk-pengembangan-lokal)
@@ -45,8 +48,9 @@ Project ini dibangun dengan memisahkan backend REST API dan frontend Single Page
 ### Frontend (Single Page Application)
 - **Framework:** React 19 dengan compiler Vite
 - **Styling:** Tailwind CSS v4 dengan sistem tema dinamis
+- **Progressive Web App (PWA):** Integrasi VitePWA dengan caching aset statis dan API berbasis Workbox serta Web App Manifest biner valid
 - **State Management:** React Context API terisolasi (`AuthContext`, `ThemeContext`, `NotificationContext`)
-- **Navigasi & Routing:** React Router v7 dengan lazy loading / code-splitting berbasis komponen
+- **Navigasi & Routing:** React Router v7 dengan lazy loading / code-splitting berbasis komponen serta route guard `AdminRoute`
 - **Form Handling:** React Hook Form terintegrasi dengan Yup schema validator
 - **Data Visualization:** Chart.js dan react-chartjs-2 untuk analitik dashboard
 
@@ -73,13 +77,35 @@ Project ini dibangun dengan memisahkan backend REST API dan frontend Single Page
 - **Navigasi Mobile Off-Canvas:** Sidebar drawer yang dapat dibuka-tutup via tombol hamburger menu pada perangkat ponsel/tablet, dilengkapi backdrop overlay dan penutupan otomatis saat navigasi berpindah
 - **Tabel Responsif:** Seluruh tabel data dilengkapi scroll horizontal adaptif tanpa merusak struktur halaman
 - **Dual-Mode Data Listing:** Pengguna dapat beralih antara mode pagination tradisional atau mode gulir otomatis (Infinite Scroll berbasis `IntersectionObserver`)
-- **Mode Gelap (Dark Mode):** Dukungan tema terang, gelap, dan sinkronisasi otomatis dengan preferensi sistem operasi
+- **Mode Gelap Tingkat Tinggi (Dark Mode):** Dukungan tema terang, gelap, dan sinkronisasi preferensi sistem dengan rasio kontras tinggi sesuai standar WCAG AAA
+- **Header Tunggal:** Tata letak header bersih dan terintegrasi tanpa elemen navigasi duplikat pada dashboard
 
-### 4. Pelaporan dan Ekspor Data
+### 4. Progressive Web App (PWA), Aksesibilitas (A11y), & SEO
+- **PWA Ready:** Dilengkapi Web App Manifest dengan ikon binary PNG standar (`icon-192x192.png`, `icon-512x512.png`, `apple-touch-icon.png`, `favicon.ico`) dan offline caching
+- **Aksesibilitas Sempurna (Lighthouse 100/100):** Seluruh tombol icon-only dan form input/select dilengkapi atribut `aria-label`, asosiasi eksplisit `htmlFor` dan `id`, serta modal close labels
+- **Optimasi Mesin Pencari (SEO 100/100):** Tag `<meta name="description">` informatif, meta viewport adaptif, title terstandarisasi, dan atribut bahasa dokumen `<html lang="id">`
+
+### 5. Pelaporan dan Ekspor Data
 - Dashboard metrik statistik inventaris dan peminjaman
 - Grafik tren peminjaman bulanan dan status transaksi
 - Ekspor laporan berformat PDF terstruktur via DomPDF
 - Ekspor spreadsheet Excel via Maatwebsite Excel
+
+---
+
+## Kontrol Akses Berbasis Peran (RBAC)
+
+Sistem menerapkan pembatasan hak akses berbasis peran (Role-Based Access Control) secara ketat pada backend API dan antarmuka pengguna frontend:
+
+| Fitur / Halaman | Administrator | Staff / Peminjam |
+|---|---|---|
+| **Dashboard** | Akses penuh (seluruh metrik & riwayat peminjaman) | Akses ringkasan & peminjaman pribadi |
+| **Daftar Barang (`/items`)** | Akses penuh (Tambah, Detail, Edit, Hapus) | Akses read-only & Detail (Tombol Tambah, Edit, Hapus tersembunyi) |
+| **Form Barang (`/items/create`, `edit`)** | Akses penuh | Akses diblokir (Otomatis redirect ke `/dashboard` via `AdminRoute`) |
+| **Kategori (`/categories`)** | Akses penuh (Tambah, Edit, Hapus) | Akses read-only (Tombol Tambah & kolom Aksi tersembunyi) |
+| **Peminjaman (`/borrowings`)** | Persetujuan (Approve/Reject) & Pengembalian | Pengajuan peminjaman baru & pelacakan status |
+| **Laporan & Ekspor (`/reports`)** | Akses seluruh laporan & ekspor PDF/Excel | Akses dibatasi sesuai otorisasi |
+| **Manajemen Pengguna (`/users/*`)** | Akses penuh CRUD pengguna & pengaturan peran | Akses diblokir (Otomatis redirect ke `/dashboard` via `AdminRoute`) |
 
 ---
 
@@ -208,7 +234,7 @@ Sistem telah diaudit dan diperkuat dengan standar keamanan tingkat tinggi:
 
 | Layanan | Alamat Akses | Keterangan |
 |---|---|---|
-| **Frontend Web** | `http://localhost:5173` | Antarmuka pengguna React |
+| **Frontend Web** | `http://localhost:5173` | Antarmuka pengguna React & PWA |
 | **Backend REST API** | `http://localhost:8000/api` | Endpoint API Laravel |
 | **PhpMyAdmin GUI** | `http://localhost:8081` | Server: `db`, User: `root`, Password: `secret` |
 | **MySQL Port Host** | `localhost:3307` | Port 3307 untuk menghindari konflik port host 3306 |
@@ -376,10 +402,10 @@ Tambahkan baris berikut:
 
 ## Pengujian Otomatis
 
-Proyek ini dilengkapi dengan suite pengujian otomatis menyeluruh:
+Proyek ini dilengkapi dengan suite pengujian otomatis menyeluruh untuk backend dan frontend:
 
 ### Pengujian Backend (PHPUnit)
-Mencakup pengujian unit dan fitur untuk autentikasi, transaksi peminjaman, proteksi race condition, hashing password reset, serta otorisasi policy:
+Mencakup pengujian unit dan fitur untuk autentikasi, transaksi peminjaman, proteksi race condition, filtering query, status mapping, hashing password reset, serta otorisasi policy:
 ```bash
 php artisan test
 ```
@@ -389,11 +415,23 @@ php vendor/phpunit/phpunit/phpunit
 ```
 
 ### Pengujian Frontend (Vitest)
-Mencakup pengujian unit komponen UI, state context tema, infinite scroll hook, serta interaksi mobile navigation drawer:
+Mencakup 10 test suite terdedikasi (69 unit tests) yang mencakup komponen UI, aksesibilitas (A11y), visibilitas peran (RBAC), infinite scroll hook, tema warna, dan layout responsif:
 ```bash
 cd frontend
-npx vitest run
+npm test -- --run
 ```
+
+Daftar cakupan pengujian frontend:
+1. `borrowingService.test.js`: Pengujian API service peminjaman barang.
+2. `useInfiniteScroll.test.jsx`: Pengujian hook infinite scroll berbasis IntersectionObserver.
+3. `NotFound.test.jsx`: Pengujian halaman 404 Fallback Route.
+4. `ThemeContext.test.jsx`: Pengujian pergantian tema terang, gelap, dan sistem.
+5. `Button.test.jsx`: Pengujian varian, state loading, dan event handler tombol.
+6. `Modal.test.jsx`: Pengujian dialog modal, backdrop overlay, dan penutupan dengan tombol Escape.
+7. `Input.test.jsx`: Pengujian input formulir, asosiasi label, dan penanganan error.
+8. `ResponsiveLayout.test.jsx`: Pengujian sidebar drawer off-canvas ponsel dan overlay.
+9. `RbacVisibility.test.jsx`: Pengujian pembatasan visibilitas tombol kontrol Admin vs Staff pada ItemList, CategoryList, dan ItemDetail.
+10. `A11ySeo.test.jsx`: Pengujian label aksesibilitas (`aria-label`, `htmlFor`, role elements) pada Header, filter tabel, dan form elements.
 
 ---
 
@@ -403,8 +441,8 @@ Setelah menjalankan seeder database (`php artisan db:seed`), akun-akun berikut t
 
 | Role | Email | Password | Keterangan |
 |---|---|---|---|
-| **Administrator** | `admin@example.com` | `password` | Akses penuh ke seluruh data, approval, dan laporan |
-| **Staff / Peminjam** | `user@example.com` | `password` | Akses peminjaman barang dan pelacakan status mandiri |
+| **Administrator** | `admin@example.com` | `password` | Akses penuh: manajemen barang, kategori, pengguna, persetujuan peminjaman, dan laporan |
+| **Staff / Peminjam** | `staff@example.com` | `password` | Akses terbatas: melihat barang/kategori, pengajuan peminjaman barang, dan pelacakan status |
 
 ---
 
